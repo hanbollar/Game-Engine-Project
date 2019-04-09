@@ -24,7 +24,6 @@ protected:
 
 public:
     Drawable();
-	Drawable(VisualType type);
 	~Drawable();
 
 	const vector<unsigned int>& indices() const { return indices_; }

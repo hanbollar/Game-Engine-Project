@@ -12,8 +12,9 @@ protected:
 	~WindowMaintainer() {}
 
 public:
-	virtual void Render() = 0;
+	virtual void Update() = 0;
 	virtual void KeyPressEvent(int key, int scancode, int action, int mods) = 0;
+    virtual void ControllerEvents(const unsigned char *button_events, const float *axes) = 0;
 	virtual void RunWithDefaultSetup() = 0;
     virtual const glm::mat4& ViewProjection() const = 0;
     virtual glm::mat4 ViewProjection() = 0;

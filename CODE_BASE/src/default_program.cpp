@@ -65,7 +65,7 @@ void DefaultProgram::CreateDrawable(shared_ptr<Drawable>& d, GLuint texture_hand
     ErrorHandler::PrintGLErrorLog();
 }
 
-void DefaultProgram::BeforeDraw(shared_ptr<Drawable>& d, WindowMaintainer* m) {
+void DefaultProgram::BeforeDraw(shared_ptr<Drawable>& d, const glm::mat4& global_transform, WindowMaintainer* m) {
     GLuint vbo;
     GLuint vao;
     d->GetHandleLocation(HandleType::VBO, &vbo);
@@ -77,7 +77,7 @@ void DefaultProgram::BeforeDraw(shared_ptr<Drawable>& d, WindowMaintainer* m) {
         glEnableVertexAttribArray(i);
     }
 
-    SetUniformMat4(d->model_matrix(), GLuint(0));
+    SetUniformMat4(global_transform * d->model_matrix(), GLuint(0));
     SetUniformMat4(m->ViewProjection(), GLuint(1));
     
     if (d->UsingHandle(HandleType::TEX)) {

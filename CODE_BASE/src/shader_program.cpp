@@ -11,9 +11,9 @@ ShaderProgram::~ShaderProgram() {
     glDeleteProgram(program_);
 }
 
-void ShaderProgram::Draw(std::shared_ptr<Drawable>& d, WindowMaintainer* m) {
+void ShaderProgram::Draw(std::shared_ptr<Drawable>& d, const glm::mat4& global_transform, WindowMaintainer* m) {
     UseMe();
-    BeforeDraw(d, m);
+    BeforeDraw(d, global_transform, m);
     glDrawArrays(d->DrawMode(), 0, d->ElementCount());
     AfterDraw(d);
 }

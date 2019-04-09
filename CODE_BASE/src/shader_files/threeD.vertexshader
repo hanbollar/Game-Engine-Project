@@ -12,5 +12,5 @@ out vec2 uv_location;
 void main(){
 	uv_location = uv;
 	gl_Position =  view_projection * model * vec4(position, 1.f);
-	fragment_color = color;
+	fragment_color = vec3(abs(gl_Position.x), abs(gl_Position.y), 1.f);//position; //color;
 }

@@ -1,9 +1,11 @@
 #include "mesh.h"
 
-Mesh::Mesh(bool default) : Drawable() {
-    if (default) {
-        CreateDefaultMesh();
-    }
+Mesh::Mesh() : Drawable() {
+    CreateDefaultMesh();
+}
+
+Mesh::Mesh(const char* file_path, int file_type) : Drawable() {
+    Load(file_path, file_type);
 }
 
 Mesh::~Mesh() {}

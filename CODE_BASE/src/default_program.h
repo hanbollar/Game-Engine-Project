@@ -9,7 +9,7 @@ public:
 	DefaultProgram(const char* vertex_file, const char* fragment_file);
 	~DefaultProgram();
 
-	virtual void CreateDrawable(shared_ptr<Drawable>& mesh, GLuint texture_handle = -1) override;
-	virtual void BeforeDraw(std::shared_ptr<Drawable>& d, WindowMaintainer* m = nullptr) override;
-	virtual void AfterDraw(std::shared_ptr<Drawable>& d) override;
+	virtual void CreateDrawable(shared_ptr<Drawable>& mesh, GLuint texture_handle = -1);
+	virtual void BeforeDraw(std::shared_ptr<Drawable>& d, const glm::mat4& global_transform, WindowMaintainer* m = nullptr);
+	virtual void AfterDraw(std::shared_ptr<Drawable>& d);
 };

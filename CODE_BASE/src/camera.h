@@ -33,6 +33,9 @@ public:
 	glm::mat4 GetView();
 	glm::mat4 GetProj();
 
+    glm::mat4 GetCameraTransfInWorld();
+    glm::mat4 GetCameraTransfInWorld() const;
+
 	void RecomputeAttributes();
 	void Resize(unsigned int w, unsigned int h);
 
@@ -41,6 +44,9 @@ public:
 	void RotateAboutRight(float deg);
 	void RotateTheta(float deg);
 	void RotatePhi(float deg);
+
+    void RotateAboutPoint(float deg);
+
 	void TranslateAlongLook(float amt);
 	void TranslateAlongRight(float amt);
 	void TranslateAlongUp(float amt);

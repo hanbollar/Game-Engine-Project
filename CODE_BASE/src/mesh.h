@@ -6,7 +6,8 @@
 
 class Mesh : public Drawable {
 public:
-	Mesh(bool default = false);
+	Mesh();
+    Mesh(const char* file_path, int file_type);
 	~Mesh();
 	
 	void CreateDefaultMesh();

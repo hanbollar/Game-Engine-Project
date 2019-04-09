@@ -85,6 +85,14 @@ void Camera::RotateAboutRight(float deg) {
 	RecomputeAttributes();
 }
 
+void Camera::RotateAboutPoint(float deg) {
+    glm::mat4 rotation = glm::rotate(glm::mat4(1.f), deg, world_up);
+    eye -= ref;
+    eye = glm::vec3(rotation * glm::vec4(eye, 1));
+    eye += ref;
+    RecomputeAttributes();
+}
+
 void Camera::RotateTheta(float deg) {
 	glm::mat4 rotation = glm::rotate(glm::mat4(1.0f), glm::radians(deg), right);
 
@@ -95,8 +103,7 @@ void Camera::RotateTheta(float deg) {
 
 	if (glm::sign(old_eye[0]) != glm::sign(eye[0]) || glm::sign(old_eye[2]) != glm::sign(eye[2])) {
 		eye = old_eye + ref;
-	}
-	else {
+	} else {
 		eye = eye + ref;
 	}
 
