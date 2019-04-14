@@ -53,3 +53,25 @@ typedef enum {
 
     NUMAXES
 } JoystickAxes;
+
+typedef enum {
+    OBJ,
+    JSON,
+    COLLADA,
+
+    NUMFILETYPES
+} Filetype;
+
+typedef enum {
+    START,
+    CONTROLLER,
+    MAINGAME,
+
+    NUMSCENES
+} SceneList;
+
+typedef enum {
+    BASIC,
+
+    NUMAUDIOS
+} AudioChoices;

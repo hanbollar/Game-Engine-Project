@@ -1,6 +1,6 @@
 #include "file_loader.h"
 
-void LoadObjectFile(
+void FileLoader::LoadObjectFile(
     const char* file_path,
     vector<glm::vec3>* positions,
     vector<unsigned int>* position_indices,
@@ -81,4 +81,10 @@ void LoadObjectFile(
         int i = 0;
     }
     int j = 0;
+}
+
+static std::string FileLoader::GetBaseDir(const std::string& filepath) {
+    if (filepath.find_last_of("/\\") != std::string::npos)
+        return filepath.substr(0, filepath.find_last_of("/\\"));
+    return "";
 }

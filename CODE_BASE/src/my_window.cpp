@@ -88,14 +88,20 @@ void MyWindow::initWindow() {
 	ErrorHandler::PrintGLErrorLog();
 
 	// Initialize GLEW
-	glewExperimental = true; // Needed for core profile
-	if (glewInit() != GLEW_OK) {
-		fprintf(stderr, "Failed to initialize GLEW\n");
-		getchar();
-		glfwTerminate();
-		exit(EXIT_FAILURE);
-	}
-	ErrorHandler::PrintGLErrorLog(0);
+    glewExperimental = GL_TRUE; // Needed for core profile
+    GLenum err = glewInit();
+    if (GLEW_OK != err && err) {
+        /* Problem: glewInit failed, something is seriously wrong. */
+        fprintf(stderr, "Error: %s\n", glewGetErrorString(err));
+        fprintf(stderr, "Failed to initialize GLEW\n");
+        getchar();
+        glfwTerminate();
+        exit(EXIT_FAILURE);
+        ErrorHandler::ThrowError(err);
+    } else {
+        ErrorHandler::ShowError(err);
+        ErrorHandler::PrintGLErrorLog(false);
+    }
 
 	// Set the mouse at the center of the screen
 	glfwPollEvents();
@@ -131,7 +137,7 @@ void MyWindow::run() {
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
         
         int present = glfwJoystickPresent(GLFW_JOYSTICK_1);
-        std::cout << "JOYSTICK:" << present << std::endl;
+       // std::cout << "JOYSTICK:" << present << std::endl;
         if (present) {
             int axes_count = 0;
             /*const float *axes = glfwGetJoystickAxes(GLFW_JOYSTICK_1, &axes_count);

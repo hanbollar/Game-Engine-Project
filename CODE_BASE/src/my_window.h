@@ -1,10 +1,10 @@
 #pragma once
 
-#include "camera.h"
+#include "scene/camera.h"
 #include "globals.h"
-#include "mesh.h"
+#include "scene/mesh.h"
 #include "window_maintainer.h"
-#include "shader_program.h"
+#include "shader_programs/shader_program.h"
 
 typedef enum {
 	GUI = 0,

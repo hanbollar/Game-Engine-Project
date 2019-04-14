@@ -1,6 +1,6 @@
 #include "globals.h"
 #include "my_window.h"
-#include "scene.h"
+#include "scene/scene.h"
 
 int main(void) {
 	// TODO: create an onScrene item maintainer.
