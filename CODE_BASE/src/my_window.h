@@ -1,10 +1,8 @@
 #pragma once
 
-#include "scene/camera.h"
 #include "globals.h"
-#include "scene/mesh.h"
 #include "window_maintainer.h"
-#include "shader_programs/shader_program.h"
+#include "scene/camera.h"
 
 typedef enum {
 	GUI = 0,
@@ -20,8 +18,6 @@ public:
 
 	int width = SCR_WIDTH;
 	int height = SCR_HEIGHT;
-
-	Camera c = Camera();
 
 	GLFWwindow* the_window;
 	WindowMaintainer* maintainer;

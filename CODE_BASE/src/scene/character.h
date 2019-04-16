@@ -1,23 +1,19 @@
 #pragma once
 
 #include "globals.h"
-#include "mesh.h"
+#include "scene_object.h"
 
-class Character
-{
-private:
-    std::string name_;
-    glm::mat4 global_transform_;
+class Character : public SceneObject {
 public:
     Character();
-    Character(shared_ptr<Drawable> body_mesh, const string& name, const glm::vec3& pos);
+    Character(
+        const char* file_path, Filetype file_type, std::shared_ptr<ShaderProgram> using_program,
+        const string& name, const glm::vec3& pos);
+    Character(
+        std::vector<shared_ptr<Drawable>>* body, std::shared_ptr<ShaderProgram> using_program,
+        const string& name, const glm::vec3& pos);
+    Character(const string& name, const glm::vec3& pos);
     ~Character();
-
-    shared_ptr<Drawable> character_body_;
-
-    glm::vec3 GetGlobalPosition();
-    glm::mat4 GetGlobalTransf_NoTranslation();
-    glm::mat4 GetGlobalTransform();
 
     void MoveLeft();
     void MoveRight();

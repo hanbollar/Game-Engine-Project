@@ -116,6 +116,8 @@ void MyWindow::initWindow() {
 	glDepthFunc(GL_LESS);
 	glEnable(GL_CULL_FACE);
 
+    glDisable(GL_CULL_FACE); // TODO: remove after all testing
+
 	// time between buffer and screen swaps
 	glfwSwapInterval(1);
 
@@ -136,32 +138,16 @@ void MyWindow::run() {
 	while (!glfwWindowShouldClose(the_window)) {
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
         
-        int present = glfwJoystickPresent(GLFW_JOYSTICK_1);
-       // std::cout << "JOYSTICK:" << present << std::endl;
-        if (present) {
+        if (glfwJoystickPresent(GLFW_JOYSTICK_1)) {
             int axes_count = 0;
-            /*const float *axes = glfwGetJoystickAxes(GLFW_JOYSTICK_1, &axes_count);
-            std::cout << "JOYSTICK: axes::";
-            std::cout << "LS X : " << axes[0];
-            std::cout << "LS Y : " << axes[1];
-            std::cout << "RS X : " << axes[2];
-            std::cout << "RS Y : " << axes[3];
-            std::cout << std::endl;*/
-
             int button_count = 0;
-            /*const unsigned char *buttons = glfwGetJoystickButtons(GLFW_JOYSTICK_1, &button_count);
-            std::cout << "JOYSTICK: buttons::" << button_count << std::endl;
-           
-            if (GLFW_PRESS == buttons[15]) {
-                std::cout << "BUTTON PRESSED" << std::endl;
-            }
-            if (GLFW_RELEASE == buttons[15]) {
-                std::cout << "BUTTON RELEASED" << std::endl;
-            }*/
 
             maintainer->ControllerEvents(
                 glfwGetJoystickButtons(GLFW_JOYSTICK_1, &button_count),
                 glfwGetJoystickAxes(GLFW_JOYSTICK_1, &axes_count));
+        } else {
+            ErrorHandler::ShowError("Joystick missing");
+            continue;
         }
 
 		maintainer->Update();

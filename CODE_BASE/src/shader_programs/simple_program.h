@@ -10,6 +10,6 @@ public:
     ~SimpleProgram();
 
     virtual void CreateDrawable(shared_ptr<Drawable>& mesh, GLuint texture_handle = -1);
-    virtual void BeforeDraw(std::shared_ptr<Drawable>& d, const glm::mat4& global_transform, WindowMaintainer* m = nullptr);
+    virtual void BeforeDraw(std::shared_ptr<Drawable>& d, const glm::mat4& global_transform, const WindowMaintainer* m);
     virtual void AfterDraw(std::shared_ptr<Drawable>& d);
 };

@@ -3,7 +3,6 @@
 #include <map>
 
 #include "globals.h"
-#include "file_loader.h"
 
 class TextHandler {
 public:

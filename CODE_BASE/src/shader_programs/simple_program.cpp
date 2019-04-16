@@ -13,27 +13,18 @@ void SimpleProgram::CreateDrawable(shared_ptr<Drawable>& d, GLuint texture_handl
     UseMe();
     ErrorHandler::PrintGLErrorLog();
 
-    vector<unsigned int> ibo_data = d->indices();
-    vector<glm::vec3> data = d->positions();
-    vector<glm::vec2> uv_data = d->uvs();
-
+    vector<unsigned int>& ibo_data = d->indices();
+    vector<Vertex>& data = d->vertices();
     vector<GLfloat> temp_data = {};
-    glm::vec3 col(0.f);
     for (int i = 0; i < ibo_data.size(); ++i) {
-        temp_data.push_back(data[ibo_data[i]].x);
-        temp_data.push_back(data[ibo_data[i]].y);
-        temp_data.push_back(data[ibo_data[i]].z);
-        temp_data.push_back(col.r);
-        temp_data.push_back(col.g);
-        temp_data.push_back(col.b);
-        temp_data.push_back(uv_data[ibo_data[i]].x);
-        temp_data.push_back(uv_data[ibo_data[i]].y);
-        std::cout << "x: " << data[ibo_data[i]].x << ", y: " << data[ibo_data[i]].y << std::endl;
-
-        if ((i + 1) % 3 == 0) {
-            col = glm::vec3(rand() % 255, rand() % 255, rand() % 255);
-            col /= 255.f;
-        }
+        temp_data.push_back(data[ibo_data[i]].pos.x);
+        temp_data.push_back(data[ibo_data[i]].pos.y);
+        temp_data.push_back(data[ibo_data[i]].pos.z);
+        temp_data.push_back(data[ibo_data[i]].col.r);
+        temp_data.push_back(data[ibo_data[i]].col.g);
+        temp_data.push_back(data[ibo_data[i]].col.b);
+        temp_data.push_back(data[ibo_data[i]].uv.x);
+        temp_data.push_back(data[ibo_data[i]].uv.y);
     }
 
     d->SetElementCount(static_cast<unsigned int>(temp_data.size()));
@@ -66,7 +57,7 @@ void SimpleProgram::CreateDrawable(shared_ptr<Drawable>& d, GLuint texture_handl
     ErrorHandler::PrintGLErrorLog();
 }
 
-void SimpleProgram::BeforeDraw(shared_ptr<Drawable>& d, const glm::mat4& global_transform, WindowMaintainer* m) {
+void SimpleProgram::BeforeDraw(shared_ptr<Drawable>& d, const glm::mat4& global_transform, const WindowMaintainer* m) {
     GLuint vbo;
     GLuint vao;
     d->GetHandleLocation(HandleType::VBO, &vbo);
@@ -78,7 +69,7 @@ void SimpleProgram::BeforeDraw(shared_ptr<Drawable>& d, const glm::mat4& global_
         glEnableVertexAttribArray(i);
     }
 
-    SetUniformMat4(global_transform * d->model_matrix(), GLuint(0));
+    SetUniformMat4(global_transform, GLuint(0));
 
     if (d->UsingHandle(HandleType::TEX) != 0) {
         GLuint tex;

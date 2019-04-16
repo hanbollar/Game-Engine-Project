@@ -17,14 +17,6 @@ typedef enum {
 } HandleType;
 
 typedef enum {
-    GenericMesh,
-    Billboard,
-    ScreenspaceElement,
-
-    NUMVISUALTYPES
-} VisualType;
-
-typedef enum {
     Y = 0,
     X = 1,
     A = 2,

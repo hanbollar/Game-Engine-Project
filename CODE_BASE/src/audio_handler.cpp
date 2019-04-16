@@ -22,15 +22,16 @@ AudioHandler::~AudioHandler() {
 
 void AudioHandler::StartPlayingSound() {
     if (using_3D_audio_) {
-        music_ = engine_->play3D(playing_filename_, vec3df(0, 0, 0), true, false, true);
-
+        music_ = engine_->play3D(playing_filename_, audio_source_, true, false, true);
         if (!music_) {
             ErrorHandler::ThrowError("Music wasn't created properly");
         }
-
-        playing_ = true;
         music_->setMinDistance(min_distance_);
+    } else {
+        engine_->play2D(playing_filename_, true);
     }
+
+    playing_ = true;
 }
 
 void AudioHandler::StopPlayingSound() {
@@ -71,7 +72,7 @@ void AudioHandler::Update(const glm::vec3& listener_pos) {
     engine_->play3D(playing_filename_, listener_position);*/
 }
 
-void AudioHandler::SetAudioSource(const glm::vec3& source_position) {
+void AudioHandler::SetAudioSourcePos(const glm::vec3& source_position) {
     audio_source_ = vec3df(source_position.x, source_position.y, source_position.z);
 }
 
@@ -83,3 +84,23 @@ void AudioHandler::SetAudioFile(const char* filename) {
     playing_filename_ = filename;
 }
 
+void AudioHandler::PlaySingleSound(const char* filename) {
+    engine_->play2D(filename);
+}
+
+void AudioHandler::PlaySingleSound(const char* filename, const glm::vec3& listener_pos) {
+    if (using_3D_audio_) {
+        vec3df listener_position(listener_pos.x, listener_pos.y, listener_pos.z);
+        vec3df listener_direction(0, 0, 1); // leaving as +z for now, might update later
+        engine_->setListenerPosition(listener_position, listener_direction);
+
+        if (music_) {
+            music_->setPosition(audio_source_);
+            music_->setMinDistance(min_distance_);
+        }
+
+        engine_->play3D(filename, audio_source_);
+    } else {
+        engine_->play2D(filename);
+    }
+}

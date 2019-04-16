@@ -2,12 +2,16 @@
 
 #include <set>
 #include <SOIL.h>
+#include <fstream>
+#include <sstream>
+#include <stb_image.h>
 
-#include "globals.h"
-#include "file_loader.h"
-#include "scene/drawable.h"
 #include "typedefs.h"
+#include "globals.h"
+#include "scene/drawable.h"
 #include "window_maintainer.h"
+
+class Drawable;
 
 class ShaderProgram {
 protected:
@@ -18,7 +22,7 @@ protected:
     unsigned int num_attributes = 0;
 
 	// For binding and unbinding elements during the drawing process.
-	virtual void BeforeDraw(std::shared_ptr<Drawable>& d, const glm::mat4& global_transform, WindowMaintainer* m = nullptr) = 0;
+	virtual void BeforeDraw(std::shared_ptr<Drawable>& d, const glm::mat4& global_transform, const WindowMaintainer* m) = 0;
 	virtual void AfterDraw(std::shared_ptr<Drawable>& d) = 0;
 
 public:
@@ -43,7 +47,7 @@ public:
 	void SetUniformMat4(const glm::mat4 &matrix, const GLuint& handle);
     void SetUniformSampler(const int& val, const GLuint& handle);
 
-	void Draw(std::shared_ptr<Drawable>& d, const glm::mat4& global_transform, WindowMaintainer* m);
+	void Draw(std::shared_ptr<Drawable>& d, const glm::mat4& global_transform, const WindowMaintainer* m);
 
     static GLuint LoadShaderProgramFiles(const char* vertex_file_path, const char* fragment_file_path);
     static GLuint LoadShaderFile(const char* file_path, GLenum shader_type);

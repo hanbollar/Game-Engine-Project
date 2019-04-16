@@ -1,31 +1,25 @@
 #include "character.h"
 
-Character::Character()
-    : character_body_(nullptr), name_(""), global_transform_(glm::mat4(1.f))
+Character::Character() : SceneObject()
 {}
 
-Character::Character(shared_ptr<Drawable> body_mesh, const string& name, const glm::vec3& pos)
-    : character_body_(body_mesh), name_(name), global_transform_(glm::translate(glm::mat4(1.f), pos))
+Character::Character(
+    const char* file_path, Filetype file_type, std::shared_ptr<ShaderProgram> using_program,
+    const string& name, const glm::vec3& pos)
+    : SceneObject(file_path, file_type, using_program, name, pos)
 {}
 
-Character::~Character() {
-}
+Character::Character(
+    std::vector<shared_ptr<Drawable>>* body, std::shared_ptr<ShaderProgram> using_program,
+    const string& name, const glm::vec3& pos)
+    : SceneObject(body, using_program, name, pos)
+{}
 
-glm::vec3 Character::GetGlobalPosition() {
-    return glm::vec3(global_transform_[3]);
-}
+Character::Character(const string& name, const glm::vec3& pos)
+{}
 
-glm::mat4 Character::GetGlobalTransf_NoTranslation() {
-    glm::mat4 returning = global_transform_;
-    returning[3][0] = 0;
-    returning[3][1] = 0;
-    returning[3][2] = 0;
-    return returning;
-}
-
-glm::mat4 Character::GetGlobalTransform() {
-    return global_transform_;
-}
+Character::~Character()
+{}
 
 void Character::MoveLeft() {
     global_transform_ = glm::translate(global_transform_, glm::vec3(-1, 0, 0));

@@ -16,10 +16,12 @@ ShaderProgram::~ShaderProgram() {
     glDeleteProgram(program_);
 }
 
-void ShaderProgram::Draw(std::shared_ptr<Drawable>& d, const glm::mat4& global_transform, WindowMaintainer* m) {
+void ShaderProgram::Draw(std::shared_ptr<Drawable>& d, const glm::mat4& global_transform, const WindowMaintainer* m) {
     UseMe();
     BeforeDraw(d, global_transform, m);
-    glDrawArrays(d->DrawMode(), 0, d->ElementCount());
+    glDrawElements(GL_TRIANGLES, d->ElementCount(), GL_UNSIGNED_INT, nullptr);
+
+    //glDrawArrays(d->DrawMode(), 0, d->ElementCount());
     AfterDraw(d);
 }
 

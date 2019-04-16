@@ -1,9 +1,11 @@
 #include "scene.h"
+#include "shader_programs/default_program.h"
+#include "shader_programs/simple_program.h"
 
 Scene::Scene()
 	:	WindowMaintainer(),
 		camera_(new Camera()),
-        generic_scene_objects_(vector<shared_ptr<Drawable>>()),
+        generic_scene_objects_(vector<shared_ptr<SceneObject>>()),
         scene_characters_(vector<shared_ptr<Character>>()),
         audio_handler_(new AudioHandler()){
 }
@@ -30,37 +32,37 @@ glm::mat4 Scene::ViewProjection() {
 }
 
 void Scene::RunWithDefaultSetup() {
-	default_program = new DefaultProgram(
+	default_program = std::shared_ptr<DefaultProgram>(new DefaultProgram(
 		"shader_files/threeD.vertexshader",
-		"shader_files/threeD.fragmentshader");
-
-    simple_program = new SimpleProgram(
+		"shader_files/threeD.fragmentshader"));
+    simple_program = std::shared_ptr<SimpleProgram>(new SimpleProgram(
         "shader_files/simple.vertexshader",
-        "shader_files/simple.fragmentshader");
+        "shader_files/simple.fragmentshader"));
+    
+    user_character_ = shared_ptr<Character>(new Character(
+        "resources/wahoo/wahoo.obj", Filetype::OBJ, default_program, "player", glm::vec3(0.f)));
 
-    shared_ptr<Drawable> main_mesh = static_cast<std::shared_ptr<Drawable>>(new Mesh("resources/wahoo/wahoo.obj", Filetype::OBJ));
-    user_character = shared_ptr<Character>(new Character(main_mesh, "player", glm::vec3(0.f)));
-
-    shared_ptr<Drawable> random_mesh = static_cast<std::shared_ptr<Drawable>>(new Mesh("resources/wahoo/wahoo.obj", Filetype::OBJ));
+    shared_ptr<SceneObject> random_mesh = shared_ptr<SceneObject>(new SceneObject(
+        "resources/buffalo/Bufalo_OBJ.obj", Filetype::OBJ, default_program, "random", glm::vec3(0.f)));
 
     GLuint texture = -1;
+    GLuint texture_buff = -1;
     ShaderProgram::LoadTextureFromFile("resources/wahoo/wahoo.bmp", texture, true);
 
-    default_program->CreateDrawable(main_mesh, start_selected_texture_);
-    default_program->CreateDrawable(random_mesh, texture);
-
     //screen_quad_ = random_mesh;
-    screen_quad_ = shared_ptr<Drawable>(new Drawable());
-    screen_quad_->MakeScreenQuad();
+    //screen_quad_ = shared_ptr<Drawable>(new Drawable());
+    //screen_quad_->MakeScreenQuad();
     
     ShaderProgram::LoadTextureFromFile("resources/Start/play.jpg", start_selected_texture_, true);
     ShaderProgram::LoadTextureFromFile("resources/Start/controls.jpg", controller_selected_texture_, true);
     ShaderProgram::LoadTextureFromFile("resources/Start/controls.jpg", controller_texture_, true);
 
-    default_program->CreateDrawable(screen_quad_, start_selected_texture_);
+    //default_program->CreateDrawable(screen_quad_, start_selected_texture_);
+
+    scene_characters_.push_back(user_character_);
 
 	generic_scene_objects_.push_back(random_mesh);
-    scene_characters_.push_back(user_character);
+    
 
     audio_handler_->StartPlayingSound();
 
@@ -86,11 +88,13 @@ void Scene::ControllerEvents(const unsigned char *button_events, const float *ax
             if (on_scene_ == SceneList::MAINGAME && !game_started_) {
                 RunWithDefaultSetup();
             }
+
+            audio_handler_->PlaySingleSound("resources/AUDIO/irrklang/bell.wav");
         }
 
         if (abs(axes_events[JoystickAxes::MOVE_Y]) == 1) {
             std::cout << "SWITCH OPTION" << std::endl;
-            start_selected_ != start_selected_;
+            start_selected_ = !start_selected_;
             if (start_selected_) {
                 screen_quad_->SetHandleLocation(HandleType::TEX, start_selected_texture_);
             } else {
@@ -117,11 +121,12 @@ void Scene::ControllerEvents(const unsigned char *button_events, const float *ax
         // not using switch case so can have multiple at one time
         if (button_events[JoystickButtons::A] == GLFW_PRESS) {
             std::cout << "JUMP" << std::endl;
-            user_character->Jump();
+            user_character_->Jump();
         }
         if (button_events[JoystickButtons::B] == GLFW_PRESS) {
             std::cout << "CROUCH" << std::endl;
-            user_character->Crouch();
+            user_character_->Crouch();
+            audio_handler_->PlaySingleSound("resources/AUDIO/irrklang/bell.wav");
         }
 
         if (button_events[JoystickButtons::RIGHT_TAB] == GLFW_PRESS) {
@@ -142,53 +147,53 @@ void Scene::ControllerEvents(const unsigned char *button_events, const float *ax
 
         if (axes_events[JoystickAxes::MOVE_X] == -1) {
             std::cout << "MOVE LEFT" << std::endl;
-            user_character->MoveLeft();
+            user_character_->MoveLeft();
             camera_->RecomputeAttributes();
         }
         else if (axes_events[JoystickAxes::MOVE_X] == 1) {
             std::cout << "MOVE RIGHT" << std::endl;
-            user_character->MoveRight();
+            user_character_->MoveRight();
             camera_->RecomputeAttributes();
         }
 
         if (axes_events[JoystickAxes::MOVE_Y] == 1) {
             std::cout << "MOVE FORWARD" << std::endl;
-            user_character->MoveForward();
+            user_character_->MoveForward();
             camera_->RecomputeAttributes();
         }
         else if (axes_events[JoystickAxes::MOVE_Y] == -1) {
             std::cout << "MOVE BACKWARD" << std::endl;
-            user_character->MoveBackward();
+            user_character_->MoveBackward();
             camera_->RecomputeAttributes();
         }
 
         if (axes_events[JoystickAxes::CAMROT_Y] == -1) {
             std::cout << "ROT VIEW UP" << std::endl;
-            camera_->ref = user_character->GetGlobalPosition();
+            camera_->ref = user_character_->GetGlobalPosition();
             camera_->RotateVerticallyAboutPoint(-0.01f);
             camera_->RecomputeAttributes();
         }
         else if (axes_events[JoystickAxes::CAMROT_Y] == 1) {
             std::cout << "ROT VIEW DOWN" << std::endl;
-            camera_->ref = user_character->GetGlobalPosition();
+            camera_->ref = user_character_->GetGlobalPosition();
             camera_->RotateVerticallyAboutPoint(0.01f);
             camera_->RecomputeAttributes();
         }
 
         if (axes_events[JoystickAxes::CAMROT_X] == -1) {
             std::cout << "ROT VIEW LEFT" << std::endl;
-            camera_->ref = user_character->GetGlobalPosition();
+            camera_->ref = user_character_->GetGlobalPosition();
             camera_->RotateHorizontallyAboutPoint(-0.01f);
             camera_->RecomputeAttributes();
         }
         else if (axes_events[JoystickAxes::CAMROT_X] == 1) {
             std::cout << "ROT VIEW RIGHT" << std::endl;
-            camera_->ref = user_character->GetGlobalPosition();
+            camera_->ref = user_character_->GetGlobalPosition();
             camera_->RotateHorizontallyAboutPoint(0.01f);
             camera_->RecomputeAttributes();
         }
 
-        glm::vec3 temp = user_character->GetGlobalPosition();
+        glm::vec3 temp = user_character_->GetGlobalPosition();
         //std::cout << "player position: " << temp.x << ", " << temp.y << ", " << temp.x << std::endl;
         // update viewing elements since camera and user were modified
         //camera_->ref = user_character->GetGlobalPosition();
@@ -204,24 +209,31 @@ void Scene::Update() {
     //if (playing_) {
         // TODO:: update timer?
 
-        audio_handler_->SetAudioSource(glm::vec3(0.f));
-        audio_handler_->Update(user_character->GetGlobalPosition());
+        audio_handler_->SetAudioSourcePos(glm::vec3(0.f));
+        audio_handler_->Update(user_character_->GetGlobalPosition());
 
-        // update view of elements
-        if (on_scene_ == SceneList::MAINGAME) {
-            glm::mat4 basis(1.f);
-            for (std::shared_ptr<Drawable> d : generic_scene_objects_) {
-                default_program->Draw(d, basis, this);
+        switch (on_scene_)
+        {
+        case SceneList::MAINGAME: 
+            for (std::shared_ptr<SceneObject> so : generic_scene_objects_) {
+                so->Draw(this);
             }
-            for (std::shared_ptr<Character> d : scene_characters_) {
-                default_program->Draw(d->character_body_, d->GetGlobalTransform(), this);
+            for (std::shared_ptr<Character> c : scene_characters_) {
+                c->Draw(this);
             }
-        } else if (on_scene_ == SceneList::START) {
-            default_program->Draw(screen_quad_, glm::mat4(1.f), this);
-            
-        } else if (on_scene_ == SceneList::CONTROLLER) {
-            default_program->Draw(screen_quad_, glm::mat4(1.f), this);
-        } else {
+
+            break;
+        case SceneList::START:
+            if (screen_quad_)
+                default_program->Draw(screen_quad_, glm::mat4(1.f), this);
+
+            break;
+        case SceneList::CONTROLLER:
+            if (screen_quad_)
+                default_program->Draw(screen_quad_, glm::mat4(1.f), this);
+
+            break;
+        default: 
             ErrorHandler::ThrowError("On invalid Scene");
         }
     //}
