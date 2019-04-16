@@ -44,7 +44,7 @@ void SceneObject::AssimpLoadObj(const char* file_path) {
         ErrorHandler::ThrowError("AssimpLoadObj error loading file: " + std::string(importer.GetErrorString()));
     }
 
-    std::vector<std::shared_ptr<Drawable>> drawable_components;
+    //std::vector<std::shared_ptr<Drawable>> drawable_components;
     glm::vec3 color(0.f);
     for (unsigned int i = 0; i < scene->mNumMeshes; ++i) {
         aiMesh* assimpMesh = scene->mMeshes[i];
@@ -58,8 +58,8 @@ void SceneObject::AssimpLoadObj(const char* file_path) {
             vertices.push_back(Vertex(
                 glm::vec3(assimpMesh->mVertices[j].x, assimpMesh->mVertices[j].y, assimpMesh->mVertices[j].z),
                 glm::vec3(assimpMesh->mNormals[j].x, assimpMesh->mNormals[j].y, assimpMesh->mNormals[j].z),
-                glm::vec2(assimpMesh->mTextureCoords[0][j].x, assimpMesh->mTextureCoords[0][j].y),
-                color
+                glm::vec2(assimpMesh->mTextureCoords[0][j].x, assimpMesh->mTextureCoords[0][j].y)//,
+                //color
             ));
         }
 

@@ -10,7 +10,7 @@ private:
     void AssimpLoadCollada(const char* file_path);
 
 protected:
-    std::vector<std::shared_ptr<Drawable>> drawable_components_;
+   
     std::string name_;
     glm::mat4 global_transform_;
 
@@ -19,6 +19,9 @@ protected:
     void Load(const char* file_path, Filetype mesh_file_type);
 
 public:
+
+    std::vector<std::shared_ptr<Drawable>> drawable_components_;
+
     SceneObject();
     SceneObject(
         std::vector<std::shared_ptr<Drawable>>* drawable_components, std::shared_ptr<ShaderProgram> using_program,

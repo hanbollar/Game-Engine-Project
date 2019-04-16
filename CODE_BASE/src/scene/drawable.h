@@ -13,10 +13,10 @@ struct Vertex {
     glm::vec3 pos;
     glm::vec3 nor;
     glm::vec2 uv;
-    glm::vec3 col;
+    //glm::vec3 col;
 
-    Vertex(const glm::vec3& p, const glm::vec3& n, const glm::vec2& tex, const glm::vec3& c)
-        : pos(p), nor(n), uv(tex), col(c)
+    Vertex(const glm::vec3& p, const glm::vec3& n, const glm::vec2& tex/*, const glm::vec3& c*/)
+        : pos(p), nor(n), uv(tex)//, col(c)
     {}
 };
 

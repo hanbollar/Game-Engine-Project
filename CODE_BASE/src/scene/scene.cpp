@@ -42,9 +42,9 @@ void Scene::RunWithDefaultSetup() {
     user_character_ = shared_ptr<Character>(new Character(
         "resources/wahoo/wahoo.obj", Filetype::OBJ, default_program, "player", glm::vec3(0.f)));
 
-    shared_ptr<SceneObject> random_mesh = shared_ptr<SceneObject>(new SceneObject(
+    /*shared_ptr<SceneObject> random_mesh = shared_ptr<SceneObject>(new SceneObject(
         "resources/buffalo/Bufalo_OBJ.obj", Filetype::OBJ, default_program, "random", glm::vec3(0.f)));
-
+*/
     GLuint texture = -1;
     GLuint texture_buff = -1;
     ShaderProgram::LoadTextureFromFile("resources/wahoo/wahoo.bmp", texture, true);
@@ -57,14 +57,18 @@ void Scene::RunWithDefaultSetup() {
     ShaderProgram::LoadTextureFromFile("resources/Start/controls.jpg", controller_selected_texture_, true);
     ShaderProgram::LoadTextureFromFile("resources/Start/controls.jpg", controller_texture_, true);
 
+    ErrorHandler::PrintGLErrorLog();
+
     //default_program->CreateDrawable(screen_quad_, start_selected_texture_);
 
     scene_characters_.push_back(user_character_);
 
-	generic_scene_objects_.push_back(random_mesh);
+	//generic_scene_objects_.push_back(random_mesh);
     
 
     audio_handler_->StartPlayingSound();
+
+    ErrorHandler::PrintGLErrorLog();
 
     // setup
     /*float posOnCircle = 0;
@@ -209,20 +213,34 @@ void Scene::Update() {
     //if (playing_) {
         // TODO:: update timer?
 
+    ErrorHandler::PrintGLErrorLog();
+
         audio_handler_->SetAudioSourcePos(glm::vec3(0.f));
         audio_handler_->Update(user_character_->GetGlobalPosition());
 
-        switch (on_scene_)
+        ErrorHandler::PrintGLErrorLog();
+
+        /*switch (on_scene_)
         {
-        case SceneList::MAINGAME: 
+        case SceneList::MAINGAME: */
             for (std::shared_ptr<SceneObject> so : generic_scene_objects_) {
-                so->Draw(this);
+                for (std::shared_ptr<Drawable> d : so->drawable_components_) {
+                    ErrorHandler::PrintGLErrorLog();
+                    default_program->CreateDrawable(d);
+                    ErrorHandler::PrintGLErrorLog();
+                    default_program->Draw(d, glm::mat4(1.f), this);
+                    ErrorHandler::PrintGLErrorLog();
+                    //so->Draw(this);
+                }
             }
             for (std::shared_ptr<Character> c : scene_characters_) {
-                c->Draw(this);
+                for (std::shared_ptr<Drawable> d : c->drawable_components_) {
+                    default_program->Draw(d, glm::mat4(1.f), this);
+                    //c->Draw(this);
+                }
             }
 
-            break;
+       /*     break;
         case SceneList::START:
             if (screen_quad_)
                 default_program->Draw(screen_quad_, glm::mat4(1.f), this);
@@ -235,6 +253,6 @@ void Scene::Update() {
             break;
         default: 
             ErrorHandler::ThrowError("On invalid Scene");
-        }
+        }*/
     //}
 }

@@ -10,19 +10,22 @@ SimpleProgram::SimpleProgram(const char* vertex_file, const char* fragment_file)
 SimpleProgram::~SimpleProgram() {}
 
 void SimpleProgram::CreateDrawable(shared_ptr<Drawable>& d, GLuint texture_handle) {
+    ErrorHandler::PrintGLErrorLog();
     UseMe();
     ErrorHandler::PrintGLErrorLog();
 
     vector<unsigned int>& ibo_data = d->indices();
     vector<Vertex>& data = d->vertices();
     vector<GLfloat> temp_data = {};
+
+    glm::vec3 col_temp(1.f);
     for (int i = 0; i < ibo_data.size(); ++i) {
         temp_data.push_back(data[ibo_data[i]].pos.x);
         temp_data.push_back(data[ibo_data[i]].pos.y);
         temp_data.push_back(data[ibo_data[i]].pos.z);
-        temp_data.push_back(data[ibo_data[i]].col.r);
-        temp_data.push_back(data[ibo_data[i]].col.g);
-        temp_data.push_back(data[ibo_data[i]].col.b);
+        temp_data.push_back(col_temp.r); //data[ibo_data[i]].col.r);
+        temp_data.push_back(col_temp.g); //data[ibo_data[i]].col.g);
+        temp_data.push_back(col_temp.b); //data[ibo_data[i]].col.b);
         temp_data.push_back(data[ibo_data[i]].uv.x);
         temp_data.push_back(data[ibo_data[i]].uv.y);
     }

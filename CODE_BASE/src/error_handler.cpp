@@ -1,6 +1,7 @@
 #include "globals.h"
 
 string ErrorHandler::GLErrorToString(GLenum err) {
+    std::cout << "DONT USE THIS METHOD : GLErrorToString - keeping as legacy for the moment" << std::endl;
 	switch (err) {
 	case GL_NO_ERROR:                      return "GL_NO_ERROR";
 	case GL_INVALID_ENUM:                  return "GL_INVALID_ENUM";
@@ -35,7 +36,7 @@ void ErrorHandler::ThrowError(GLenum err) {
 }
 
 void ErrorHandler::ShowError(GLenum err) {
-	cout << ErrorHandler::GLErrorToString(err) << endl;
+	cout << glewGetErrorString(err) << endl;
 }
 
 void ErrorHandler::OpenGLCheck() {
@@ -58,13 +59,14 @@ void ErrorHandler::GlslCheck() {
 void ErrorHandler::PrintGLErrorLog(bool throwing) {
 	GLenum error = glGetError();
 	if (error != GL_NO_ERROR) {
-		ShowError(error);
+        ShowError(error);
 		// Throwing here allows us to use the debugger to track down the error.
 #ifndef __APPLE__
 		// Don't do this on OS X.
 		// http://lists.apple.com/archives/mac-opengl/2012/Jul/msg00038.html
-		if (throwing) 
-			throw;
+        if (throwing) {
+            ThrowError(error);
+        }
 #endif
 	}
 }

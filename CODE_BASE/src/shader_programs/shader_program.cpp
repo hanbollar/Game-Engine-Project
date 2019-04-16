@@ -19,7 +19,7 @@ ShaderProgram::~ShaderProgram() {
 void ShaderProgram::Draw(std::shared_ptr<Drawable>& d, const glm::mat4& global_transform, const WindowMaintainer* m) {
     UseMe();
     BeforeDraw(d, global_transform, m);
-    glDrawElements(GL_TRIANGLES, d->ElementCount(), GL_UNSIGNED_INT, nullptr);
+    //glDrawElements(GL_TRIANGLES, d->ElementCount(), GL_UNSIGNED_INT, nullptr);
 
     //glDrawArrays(d->DrawMode(), 0, d->ElementCount());
     AfterDraw(d);
