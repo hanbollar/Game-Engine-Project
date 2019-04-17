@@ -2,6 +2,7 @@
 
 #include "globals.h"
 #include "scene_object.h"
+#include "camera.h"
 
 class Character : public SceneObject {
 public:
@@ -15,11 +16,10 @@ public:
     Character(const string& name, const glm::vec3& pos);
     ~Character();
 
-    void MoveLeft();
-    void MoveRight();
-    void MoveForward();
-    void MoveBackward();
-    void Jump();
-    void Crouch();
+    float moving_magnitude_ = 1;
+
+    void MoveInDirection(std::shared_ptr<Camera>& c, const glm::vec3& offset);
+    void Jump(std::shared_ptr<Camera>& c);
+    void Crouch(std::shared_ptr<Camera>& c);
 };
 

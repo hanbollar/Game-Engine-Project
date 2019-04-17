@@ -5,7 +5,8 @@ SceneObject::SceneObject() {}
 SceneObject::SceneObject(
     const char* file_path, Filetype file_type, std::shared_ptr<ShaderProgram> using_program,
     const string& name, const glm::vec3& pos)
-    : drawable_components_(std::vector<std::shared_ptr<Drawable>>()), program_(using_program),
+    : drawable_components_(std::vector<std::shared_ptr<Drawable>>()),
+      program_ptr_(using_program), program_(using_program->Handle()),
       global_transform_(glm::translate(glm::mat4(1.f), pos)), name_(name) {
 
     Load(file_path, file_type);
@@ -14,7 +15,8 @@ SceneObject::SceneObject(
 SceneObject::SceneObject(
     std::vector<std::shared_ptr<Drawable>>* drawable_components, std::shared_ptr<ShaderProgram> using_program,
     const string& name, const glm::vec3& pos)
-    : drawable_components_(*drawable_components), program_(using_program),
+    : drawable_components_(*drawable_components),
+      program_ptr_(using_program), program_(using_program->Handle()),
       global_transform_(glm::translate(glm::mat4(1.f), pos)), name_(name)
 {}
 
@@ -44,7 +46,6 @@ void SceneObject::AssimpLoadObj(const char* file_path) {
         ErrorHandler::ThrowError("AssimpLoadObj error loading file: " + std::string(importer.GetErrorString()));
     }
 
-    //std::vector<std::shared_ptr<Drawable>> drawable_components;
     glm::vec3 color(0.f);
     for (unsigned int i = 0; i < scene->mNumMeshes; ++i) {
         aiMesh* assimpMesh = scene->mMeshes[i];
@@ -58,16 +59,14 @@ void SceneObject::AssimpLoadObj(const char* file_path) {
             vertices.push_back(Vertex(
                 glm::vec3(assimpMesh->mVertices[j].x, assimpMesh->mVertices[j].y, assimpMesh->mVertices[j].z),
                 glm::vec3(assimpMesh->mNormals[j].x, assimpMesh->mNormals[j].y, assimpMesh->mNormals[j].z),
-                glm::vec2(assimpMesh->mTextureCoords[0][j].x, assimpMesh->mTextureCoords[0][j].y)//,
-                //color
+                glm::vec2(assimpMesh->mTextureCoords[0][j].x, assimpMesh->mTextureCoords[0][j].y)
             ));
         }
 
         for (unsigned int j = 0; j < assimpMesh->mNumFaces; ++j) {
-            aiFace face = assimpMesh->mFaces[j];
-            for (unsigned int k = 0; k < face.mNumIndices; ++k) {
-                indices.push_back(face.mIndices[k]);
-            }
+            indices.push_back(assimpMesh->mFaces[i].mIndices[0]);
+            indices.push_back(assimpMesh->mFaces[i].mIndices[1]);
+            indices.push_back(assimpMesh->mFaces[i].mIndices[2]);
         }
 
         drawable_components_.push_back(std::shared_ptr<Drawable>(new Drawable(&vertices, &indices, GL_TRIANGLES)));
@@ -89,9 +88,12 @@ void SceneObject::Load(const char* file_path, Filetype mesh_file_type) {
         AssimpLoadCollada(file_path);
     }
 
+    if (!program_) {
+        return;
+    }
     for (std::shared_ptr<Drawable> d : drawable_components_) {
         GLuint texture_handle = -1; // NEED BETTER WAY TO HANDLE TEXTURE
-        program_->CreateDrawable(d, texture_handle);
+        program_ptr_->CreateDrawable(d, texture_handle); //----------------------this is where issue is.
     }
 }
 
@@ -115,9 +117,9 @@ glm::mat4 SceneObject::GetGlobalTransform() {
     return global_transform_;
 }
 
-void SceneObject::Draw(const WindowMaintainer* m) {
+void SceneObject::Draw(const glm::mat4& view_proj) {
     for (std::shared_ptr<Drawable> d : drawable_components_) {
-        program_->Draw(d, GetGlobalTransform(), m);
+        program_ptr_->Draw(d, global_transform_, view_proj);
     }
 }
 

@@ -12,85 +12,49 @@ SimpleProgram::~SimpleProgram() {}
 void SimpleProgram::CreateDrawable(shared_ptr<Drawable>& d, GLuint texture_handle) {
     ErrorHandler::PrintGLErrorLog();
     UseMe();
-    ErrorHandler::PrintGLErrorLog();
 
-    vector<unsigned int>& ibo_data = d->indices();
-    vector<Vertex>& data = d->vertices();
-    vector<GLfloat> temp_data = {};
+    vector<GLuint> indices = d->indices();
+    vector<Vertex> data = d->vertices();
 
-    glm::vec3 col_temp(1.f);
-    for (int i = 0; i < ibo_data.size(); ++i) {
-        temp_data.push_back(data[ibo_data[i]].pos.x);
-        temp_data.push_back(data[ibo_data[i]].pos.y);
-        temp_data.push_back(data[ibo_data[i]].pos.z);
-        temp_data.push_back(col_temp.r); //data[ibo_data[i]].col.r);
-        temp_data.push_back(col_temp.g); //data[ibo_data[i]].col.g);
-        temp_data.push_back(col_temp.b); //data[ibo_data[i]].col.b);
-        temp_data.push_back(data[ibo_data[i]].uv.x);
-        temp_data.push_back(data[ibo_data[i]].uv.y);
+    vector<glm::vec3> temp_pos;
+    for (int i = 0; i < data.size(); ++i) {
+        temp_pos.push_back(glm::vec3(data[i].pos));
     }
 
-    d->SetElementCount(static_cast<unsigned int>(temp_data.size()));
-
-    GLuint vbo = 0;
-    GLuint vao = 0;
-
-    GLsizei step_size = 8 * sizeof(GLfloat);
-    glGenBuffers(1, &vbo);
-    glBindBuffer(GL_ARRAY_BUFFER, vbo);
-    glBufferData(GL_ARRAY_BUFFER, temp_data.size() * sizeof(GLfloat), temp_data.data(), GL_STATIC_DRAW);
+    GLuint vbo = -1;
+    GLuint vao = -1;
 
     glGenVertexArrays(1, &vao);
     glBindVertexArray(vao);
-    glEnableVertexAttribArray(0);
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, step_size, 0);
-    glEnableVertexAttribArray(1);
-    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, step_size, (const GLvoid*)(3 * sizeof(GLfloat)));
-    glEnableVertexAttribArray(2);
-    glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, step_size, (const GLvoid*)(6 * sizeof(GLfloat)));
-    num_attributes = 3;
+
+    GLsizei count = temp_pos.size();
+
+    glGenBuffers(1, &vbo);
+    glBindBuffer(GL_ARRAY_BUFFER, vbo);
+    glBufferData(GL_ARRAY_BUFFER, count * sizeof(glm::vec3), temp_pos.data(), GL_STATIC_DRAW);
 
     d->SetHandleLocation(HandleType::VBO, vbo);
     d->SetHandleLocation(HandleType::VAO, vao);
 
-    if (texture_handle != -1) {
-        d->SetHandleLocation(HandleType::TEX, texture_handle);
-    }
-
-    ErrorHandler::PrintGLErrorLog();
+    d->SetElementCount(count);
 }
 
-void SimpleProgram::BeforeDraw(shared_ptr<Drawable>& d, const glm::mat4& global_transform, const WindowMaintainer* m) {
+void SimpleProgram::Draw(shared_ptr<Drawable>& d, const glm::mat4& global_transform, const glm::mat4& view_proj) {
     GLuint vbo;
     GLuint vao;
     d->GetHandleLocation(HandleType::VBO, &vbo);
     d->GetHandleLocation(HandleType::VAO, &vao);
-    glBindBuffer(GL_ARRAY_BUFFER, vbo);
+
+    glUseProgram(program_);
     glBindVertexArray(vao);
 
-    for (unsigned int i = 0; i < num_attributes; ++i) {
-        glEnableVertexAttribArray(i);
-    }
+    glEnableVertexAttribArray(0);
+    glBindBuffer(GL_ARRAY_BUFFER, vbo);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, (void*)0);
 
-    SetUniformMat4(global_transform, GLuint(0));
+    /// during draw
+    glDrawArrays(GL_TRIANGLES, 0, d->ElementCount());
 
-    if (d->UsingHandle(HandleType::TEX) != 0) {
-        GLuint tex;
-        d->GetHandleLocation(HandleType::TEX, &tex);
-
-        glActiveTexture(GL_TEXTURE0);
-        glBindTexture(GL_TEXTURE_2D, tex);
-    }
-}
-
-void SimpleProgram::AfterDraw(std::shared_ptr<Drawable>& d) {
-    glBindBuffer(GL_ARRAY_BUFFER, 0);
-
-    for (unsigned int i = 0; i < num_attributes; ++i) {
-        glDisableVertexAttribArray(i);
-    }
-
-    glBindVertexArray(0);
-    glBindTexture(GL_TEXTURE_2D, 0);
-    glUseProgram(0);
+    /// after draw
+    glDisableVertexAttribArray(0);
 }

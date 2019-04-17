@@ -10,16 +10,21 @@
 
 class Scene : public WindowMaintainer {
 private:
+    GLuint program_test_;
+    GLuint vao_;
+    GLuint vbo_;
+    int num_pos_;
+
 	shared_ptr<Camera> camera_;
     shared_ptr<AudioHandler> audio_handler_;
 
-    shared_ptr<ShaderProgram> default_program;
-    shared_ptr<ShaderProgram> simple_program;
+    shared_ptr<ShaderProgram> default_program_;
+    shared_ptr<ShaderProgram> simple_program_;
+
+    bool game_started_ = false;
+    bool playing_ = false;
 
     SceneList on_scene_ = SceneList::START;
-
-    bool playing_ = false;
-    bool game_started_ = true;
 
     // START
     shared_ptr<Drawable> screen_quad_ = nullptr;

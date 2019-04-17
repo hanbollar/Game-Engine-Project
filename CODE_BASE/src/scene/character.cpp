@@ -21,26 +21,18 @@ Character::Character(const string& name, const glm::vec3& pos)
 Character::~Character()
 {}
 
-void Character::MoveLeft() {
-    global_transform_ = glm::translate(global_transform_, glm::vec3(-1, 0, 0));
+void Character::MoveInDirection(std::shared_ptr<Camera>& camera, const glm::vec3& offset) {
+    camera->ref = glm::vec3(
+        glm::translate(glm::mat4(1.f), offset) * glm::vec4(camera->ref, 1.f)
+    );
+    camera->RecomputeAttributes();
+    global_transform_ = glm::translate(global_transform_, offset);
 }
 
-void Character::MoveRight() {
-    global_transform_ = glm::translate(global_transform_, glm::vec3(1, 0, 0));
-}
-
-void Character::MoveForward() {
-    global_transform_ = glm::translate(global_transform_, glm::vec3(0, 0, 1));
-}
-
-void Character::MoveBackward() {
-    global_transform_ = glm::translate(global_transform_, glm::vec3(0, 0, -1));
-}
-
-void Character::Jump() {
+void Character::Jump(std::shared_ptr<Camera>& c) {
 
 }
 
-void Character::Crouch() {
+void Character::Crouch(std::shared_ptr<Camera>& c) {
 
 }

@@ -16,22 +16,13 @@ ShaderProgram::~ShaderProgram() {
     glDeleteProgram(program_);
 }
 
-void ShaderProgram::Draw(std::shared_ptr<Drawable>& d, const glm::mat4& global_transform, const WindowMaintainer* m) {
-    UseMe();
-    BeforeDraw(d, global_transform, m);
-    //glDrawElements(GL_TRIANGLES, d->ElementCount(), GL_UNSIGNED_INT, nullptr);
-
-    //glDrawArrays(d->DrawMode(), 0, d->ElementCount());
-    AfterDraw(d);
-}
-
 /*********************/
 /****** Setters ******/
 /*********************/
 
 
 void ShaderProgram::SetUniformDouble(const float& val, const GLuint& handle) {
-    UseMe();
+    //UseMe();
     if (handle == -1) {
         ErrorHandler::ThrowError("handle was -1.");
     } else {
@@ -40,7 +31,7 @@ void ShaderProgram::SetUniformDouble(const float& val, const GLuint& handle) {
 }
 
 void ShaderProgram::SetUniformFloat(const float& val, const GLuint& handle) {
-    UseMe();
+    //UseMe();
     if (handle == -1) {
         ErrorHandler::ThrowError("handle was -1.");
     } else {
@@ -49,7 +40,7 @@ void ShaderProgram::SetUniformFloat(const float& val, const GLuint& handle) {
 }
 
 void ShaderProgram::SetUniformInt(const int& val, const GLuint& handle) {
-    UseMe();
+    //UseMe();
     if (handle == -1) {
         ErrorHandler::ThrowError("handle was -1.");
     } else {
@@ -58,7 +49,7 @@ void ShaderProgram::SetUniformInt(const int& val, const GLuint& handle) {
 }
 
 void ShaderProgram::SetUniformVec3(const glm::vec3 &vector3, const GLuint& handle) {
-    UseMe();
+    //UseMe();
     if (handle == -1) {
         ErrorHandler::ThrowError("handle was -1.");
     } else {
@@ -67,7 +58,7 @@ void ShaderProgram::SetUniformVec3(const glm::vec3 &vector3, const GLuint& handl
 }
 
 void ShaderProgram::SetUniformVec4(const glm::vec4 &vector4, const GLuint& handle) {
-    UseMe();
+    //UseMe();
     if (handle == -1) {
         ErrorHandler::ThrowError("handle was -1.");
     } else {
@@ -76,7 +67,7 @@ void ShaderProgram::SetUniformVec4(const glm::vec4 &vector4, const GLuint& handl
 }
 
 void ShaderProgram::SetUniformMat4(const glm::mat4 &matrix, const GLuint& handle) {
-    UseMe();
+    //UseMe();
     if (handle == -1) {
         ErrorHandler::ThrowError("handle was -1.");
     } else {
@@ -85,7 +76,7 @@ void ShaderProgram::SetUniformMat4(const glm::mat4 &matrix, const GLuint& handle
 }
 
 void ShaderProgram::SetUniformSampler(const int& val, const GLuint& handle) {
-    UseMe();
+    //UseMe();
     if (handle == -1) {
         ErrorHandler::ThrowError("handle was -1.");
     }

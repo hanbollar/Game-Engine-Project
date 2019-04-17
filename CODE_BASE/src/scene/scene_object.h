@@ -14,12 +14,12 @@ protected:
     std::string name_;
     glm::mat4 global_transform_;
 
-    std::shared_ptr<ShaderProgram> program_;
+    std::shared_ptr<ShaderProgram> program_ptr_;
+    GLuint program_;
 
     void Load(const char* file_path, Filetype mesh_file_type);
 
 public:
-
     std::vector<std::shared_ptr<Drawable>> drawable_components_;
 
     SceneObject();
@@ -35,5 +35,8 @@ public:
     glm::mat4 GetGlobalTransf_NoTranslation();
     glm::mat4 GetGlobalTransform();
 
-    void Draw(const WindowMaintainer* m);
+    GLuint Program() { return program_; }
+    const GLuint Program() const { return program_; }
+
+    void Draw(const glm::mat4& view_proj);
 };
