@@ -46,15 +46,12 @@ void SceneObject::AssimpLoadObj(const char* file_path) {
         ErrorHandler::ThrowError("AssimpLoadObj error loading file: " + std::string(importer.GetErrorString()));
     }
 
-    glm::vec3 color(0.f);
     for (unsigned int i = 0; i < scene->mNumMeshes; ++i) {
-        aiMesh* assimpMesh = scene->mMeshes[i];
+        const aiMesh* assimpMesh = scene->mMeshes[i];
 
         std::vector<Vertex> vertices;
-        std::vector<GLuint> indices;
+        std::vector<unsigned short> indices;
 
-        color = glm::vec3(rand() % 255, rand() % 255, rand() % 255);
-        color /= 255.f;
         for (unsigned int j = 0; j < assimpMesh->mNumVertices; ++j) {
             vertices.push_back(Vertex(
                 glm::vec3(assimpMesh->mVertices[j].x, assimpMesh->mVertices[j].y, assimpMesh->mVertices[j].z),
@@ -115,6 +112,10 @@ glm::mat4 SceneObject::GetGlobalTransf_NoTranslation() {
 
 glm::mat4 SceneObject::GetGlobalTransform() {
     return global_transform_;
+}
+
+void SceneObject::SetGlobalTransform(const glm::mat4& transf) {
+    global_transform_ = transf;
 }
 
 void SceneObject::Draw(const glm::mat4& view_proj) {

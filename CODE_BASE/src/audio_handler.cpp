@@ -1,6 +1,9 @@
 #include "audio_handler.h"
 
-AudioHandler::AudioHandler() : AudioHandler("resources/AUDIO/irrklang/ophelia.mp3", 5.f, glm::vec3(0.f)) {}
+char* SOUNDS[2]{ "resources/AUDIO/irrklang/bell.wav",
+                  "resources/AUDIO/irrklang/ophelia.mp3" };
+
+AudioHandler::AudioHandler() : AudioHandler(SOUNDS[AudioChoices::STARTSCREEN], 5.f, glm::vec3(0.f)) {}
 
 AudioHandler::AudioHandler(const char* audioFile, const float& minDistance, const glm::vec3& sourcePos)
         : engine_(createIrrKlangDevice()),
@@ -9,6 +12,7 @@ AudioHandler::AudioHandler(const char* audioFile, const float& minDistance, cons
           using_3D_audio_(true), playing_(false),
           playing_filename_(audioFile) {
 
+    char* sound = SOUNDS[AudioChoices::STARTSCREEN];
     if (!engine_) {
         ErrorHandler::ThrowError("Sound Engine wasn't created properly");
     }
@@ -80,15 +84,15 @@ void AudioHandler::SetMinDistance(const float& min_dist) {
     min_distance_ = min_dist;
 }
 
-void AudioHandler::SetAudioFile(const char* filename) {
-    playing_filename_ = filename;
+void AudioHandler::SetAudioFile(AudioChoices choice) {
+    playing_filename_ = SOUNDS[choice];
 }
 
-void AudioHandler::PlaySingleSound(const char* filename) {
-    engine_->play2D(filename);
+void AudioHandler::PlaySingleSound(AudioChoices choice) {
+    engine_->play2D(SOUNDS[choice]);
 }
 
-void AudioHandler::PlaySingleSound(const char* filename, const glm::vec3& listener_pos) {
+void AudioHandler::PlaySingleSound(AudioChoices choice, const glm::vec3& listener_pos) {
     if (using_3D_audio_) {
         vec3df listener_position(listener_pos.x, listener_pos.y, listener_pos.z);
         vec3df listener_direction(0, 0, 1); // leaving as +z for now, might update later
@@ -99,8 +103,8 @@ void AudioHandler::PlaySingleSound(const char* filename, const glm::vec3& listen
             music_->setMinDistance(min_distance_);
         }
 
-        engine_->play3D(filename, audio_source_);
+        engine_->play3D(SOUNDS[choice], audio_source_);
     } else {
-        engine_->play2D(filename);
+        engine_->play2D(SOUNDS[choice]);
     }
 }

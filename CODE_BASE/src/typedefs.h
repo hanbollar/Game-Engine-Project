@@ -63,7 +63,8 @@ typedef enum {
 } SceneList;
 
 typedef enum {
-    BASIC,
+    BELL = 0,
+    STARTSCREEN = 1,
 
     NUMAUDIOS
 } AudioChoices;

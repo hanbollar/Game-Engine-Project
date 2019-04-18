@@ -35,6 +35,8 @@ public:
     glm::mat4 GetGlobalTransf_NoTranslation();
     glm::mat4 GetGlobalTransform();
 
+    void SetGlobalTransform(const glm::mat4& transf);
+
     GLuint Program() { return program_; }
     const GLuint Program() const { return program_; }
 

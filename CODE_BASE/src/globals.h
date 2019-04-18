@@ -24,6 +24,8 @@ using namespace glm;
 static const unsigned int SCR_WIDTH = 1024;
 static const unsigned int SCR_HEIGHT = 768;
 
+#define M_PI 3.14159265358979323846264338327950288419716939937510582097494459230781640628620899862
+
 // below namespace was converted from the 2017 glwidget277.h Qt based class from CIS 561
 namespace ErrorHandler {
 	string GLErrorToString(GLenum err);

@@ -5,8 +5,7 @@
 #endif
 #include <stb_image.h>
 
-ShaderProgram::ShaderProgram(const char* vertex_file,
-    const char* fragment_file)
+ShaderProgram::ShaderProgram(const char* vertex_file, const char* fragment_file)
     : using_handles_(set<HandleType>()) {
 
     program_ = LoadShaderProgramFiles(vertex_file, fragment_file);
@@ -20,6 +19,13 @@ ShaderProgram::~ShaderProgram() {
 /****** Setters ******/
 /*********************/
 
+void ShaderProgram::SetTimer(shared_ptr<Timer> timer) {
+    timer_ = timer;
+}
+
+void ShaderProgram::SetResolution(glm::vec2& resolution) {
+    resolution_ = resolution;
+}
 
 void ShaderProgram::SetUniformDouble(const float& val, const GLuint& handle) {
     //UseMe();
@@ -45,6 +51,16 @@ void ShaderProgram::SetUniformInt(const int& val, const GLuint& handle) {
         ErrorHandler::ThrowError("handle was -1.");
     } else {
         glUniform1i(handle, val);
+    }
+}
+
+void ShaderProgram::SetUniformVec2(const glm::vec2& vector2, const GLuint& handle) {
+    //UseMe();
+    if (handle == -1) {
+        ErrorHandler::ThrowError("handle was -1.");
+    }
+    else {
+        glUniform2f(handle, vector2[0], vector2[1]);
     }
 }
 
@@ -134,29 +150,6 @@ GLuint ShaderProgram::LoadShaderFile(const char* file_path, GLenum shader_type) 
     return shader_id;
 }
 
-/*
-GLuint ShaderProgram::LoadGenericTexture(const GLsizei& width, const GLsizei& height, unsigned char* data) {
-    if (data == nullptr) {
-        return -1;
-    }
-    GLuint texture_id = 0;
-    glGenTextures(1, &texture_id);
-    glBindTexture(GL_TEXTURE_2D, texture_id);
-    ErrorHandler::PrintGLErrorLog();
-
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, data);
-    glGenerateMipmap(GL_TEXTURE_2D);
-
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_NEAREST);
-    glBindTexture(GL_TEXTURE_2D, 0);
-    ErrorHandler::PrintGLErrorLog();
-
-    return texture_id;
-}*/
-
 void ShaderProgram::LoadTextureFromFile(const char* file_path, GLuint& tex_id, bool createNewId) {
     if (file_path == nullptr) {
         ErrorHandler::ThrowError("Invalid texture file input!");
@@ -166,25 +159,10 @@ void ShaderProgram::LoadTextureFromFile(const char* file_path, GLuint& tex_id, b
     glBindTexture(GL_TEXTURE_2D, texture_id);
     ErrorHandler::PrintGLErrorLog();
 
-    /*glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_NEAREST);*/
-
-    ////
-
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-
-    /*
-    context->glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA,
-        m_textureImage->width(), m_textureImage->height(),
-        0, GL_BGRA, GL_UNSIGNED_INT_8_8_8_8_REV, m_textureImage->bits());
-    context->printGLErrorLog();*/
-
-    ////
 
     int width, height, nrChannels;
     unsigned char *data = stbi_load(file_path, &width, &height, &nrChannels, 0);
@@ -192,8 +170,6 @@ void ShaderProgram::LoadTextureFromFile(const char* file_path, GLuint& tex_id, b
         ErrorHandler::ThrowError("Texture not Loaded!");
     }
 
-    /*glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, data);
-    glGenerateMipmap(GL_TEXTURE_2D);*/
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, data);
     ErrorHandler::PrintGLErrorLog();
 

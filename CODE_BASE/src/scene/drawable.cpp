@@ -1,21 +1,21 @@
 #include "drawable.h"
 
 Drawable::Drawable()
-    : vertices_(vector<Vertex>()), indices_(vector<GLuint>()), draw_mode_(GL_TRIANGLES), count_(0)
+    : vertices_(vector<Vertex>()), indices_(vector<unsigned short>()), draw_mode_(GL_TRIANGLES), count_(0)
 {}
 
-Drawable::Drawable(vector<Vertex>* vertices, vector<GLuint>* idx, const GLenum& draw_mode)
+Drawable::Drawable(vector<Vertex>* vertices, vector<unsigned short>* idx, const GLenum& draw_mode)
     : vertices_(*vertices), indices_(*idx), draw_mode_(draw_mode), count_(static_cast<GLsizei>(idx->size()))
 {}
 
 Drawable::~Drawable() {
 	GLuint location = 0;
     auto handle_iterator = using_handle_locations_.begin();
-	if (GetHandleLocation(HandleType::VAO, &location)) {
+	if (GetHandleLocation(HandleType::VAO) != -1) {
 		glDeleteVertexArrays(1, &location);
         ++handle_iterator;
 	}
-    if (GetHandleLocation(HandleType::TEX, &location)) {
+    if (GetHandleLocation(HandleType::TEX) != -1) {
         glDeleteTextures(1, &location);
         ++handle_iterator;
     }
@@ -26,21 +26,19 @@ Drawable::~Drawable() {
 	}
 }
 
-const bool Drawable::GetHandleLocation(HandleType type, GLuint* location) const {
+const GLuint Drawable::GetHandleLocation(HandleType type) const {
 	try {
-		*location = using_handle_locations_.at(type);
-		return true;
+		return using_handle_locations_.at(type);
 	} catch (out_of_range) {
-		return false;
+		return -1;
 	}
 }
 
-bool Drawable::GetHandleLocation(HandleType type, GLuint* location) {
+GLuint Drawable::GetHandleLocation(HandleType type) {
 	try {
-		*location = using_handle_locations_.at(type);
-		return true;
+		return using_handle_locations_.at(type);
 	} catch (out_of_range) {
-		return false;
+		return -1;
 	}
 }
 

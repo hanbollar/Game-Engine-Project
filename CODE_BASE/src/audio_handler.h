@@ -6,6 +6,7 @@
 
 #include "third_party/irrKlang/irrKlang.h"
 #include "globals.h"
+#include "typedefs.h"
 
 using namespace irrklang;
 
@@ -35,8 +36,8 @@ public:
 
     void SetAudioSourcePos(const glm::vec3& source_position);
     void SetMinDistance(const float& min_dist);
-    void SetAudioFile(const char* filename);
+    void SetAudioFile(AudioChoices choice);
 
-    void PlaySingleSound(const char* filename);
-    void PlaySingleSound(const char* filename, const glm::vec3& listener_pos);
+    void PlaySingleSound(AudioChoices choice);
+    void PlaySingleSound(AudioChoices choice, const glm::vec3& listener_pos);
 };

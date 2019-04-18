@@ -1,0 +1,112 @@
+#version 430 core
+
+layout(location = 2) uniform float timer;
+layout(location = 3) uniform vec2 resolution;
+
+out vec3 color;
+
+// Written by Thy Tran, small compile to shader edits by Hannah Bollar
+// SP19IPD rain shader - ripple
+// Recreate from scratch to imitate this shader https://www.shadertoy.com/view/ldfyzl*/
+// With help from Jake Lem and Enoch Solano
+
+#define MATH_PI 3.14159265358979323846264338327950288419716939937510582097494459230781640628620899862803482
+
+// Returns from 0 to 1, taken from https://stackoverflow.com/questions/4200224/random-noise-functions-for-glsl 
+// so that the ripple does not appear at the same place throughout all cycles 
+float rand(vec2 co){ return fract(sin(dot(co.xy ,vec2(12.9898,78.233))) * 43758.5453); }
+
+vec4 mainImage(vec2 fragCoord) { 
+    vec4 fragColor = vec4(0, 0, 0, 0);
+
+    // Normalized pixel coordinates (from 0 to 1) 
+    vec2 uv = fragCoord/resolution.xy;
+    // Center of the circle
+    float xNor, yNor, xScr, yScr; 
+
+    for (int i = 0; i < 100; i+=1) {
+        float intervalFactor = 0.5; 
+        float timeOffset = float(i) * 0.1;
+        float timeWithFactor = timer * intervalFactor + timeOffset;
+        // Only change circle's position if the circle has expanded to its max
+        // Get a random x position
+        float xNor = rand(vec2(i, i * 3));
+        float yNor = rand(vec2(i, i * 2)); 
+
+        float offset = xNor + 20.0 * yNor;
+        // Normalize max and min radius of the ripple 
+        float maxRadNor = 0.050 + 0.005 * float(i) * sin(offset + timeWithFactor);
+        float strokeThicknessNor = 0.005;
+        float distInnerOuterCirNor = 0.008;
+
+
+        // Max and min radious of the ripple in screen space
+        float maxRadScr = maxRadNor * resolution.x;
+        float strokeThicknessScr = strokeThicknessNor * resolution.x;
+        float distInnerOuterCirScr = distInnerOuterCirNor * resolution.x;
+
+        bool circleExpanding = true; // the circle's center changes if the circle expands to its max radius
+
+
+        vec2 centerCirNor = vec2(xNor, yNor);
+        vec2 centerCirScr = centerCirNor * resolution.xy;            
+
+        circleExpanding = sin(timeWithFactor + offset) > 0.0 && cos(timeWithFactor ) > 0.0;
+
+        // Check if coordinate is within the stroke to draw the outer and inner circle   
+        float distFragToCenterCirScr = distance(fragCoord, centerCirScr);
+
+        bool withinOuterCirStroke =  distFragToCenterCirScr < maxRadScr 
+            && distFragToCenterCirScr > (maxRadScr - strokeThicknessScr);
+        bool withinInnerCirStroke = 
+            distFragToCenterCirScr < (maxRadScr - distInnerOuterCirScr) &&
+            distFragToCenterCirScr > (maxRadScr - distInnerOuterCirScr - strokeThicknessScr);
+
+
+        if (circleExpanding && (withinOuterCirStroke || withinInnerCirStroke)) { 
+
+            // Find the boost factor so that certain areas of the circle are brighter than others (in first and third quadrant)
+            // Angle created with respect to the center
+            float xDiffScr = fragCoord.x - centerCirScr.x;
+            float yDiffScr = fragCoord.y - centerCirScr.y;
+            float sinAngle = yDiffScr / distFragToCenterCirScr;
+            float cosAngle = xDiffScr / distFragToCenterCirScr;
+            float angleFromASin = asin(sinAngle);
+            float angleBrightest = MATH_PI / 4.0;
+            float quadrantMea = MATH_PI / 2.0;
+            float boost = 0.05;
+            float fadeBySize;
+
+            if (withinOuterCirStroke) {
+                fadeBySize = smoothstep(1.0, 0.09, distFragToCenterCirScr / maxRadScr);
+            } else {
+                fadeBySize = smoothstep(1.0, 0.09, distFragToCenterCirScr / (maxRadScr - distInnerOuterCirScr));
+            }
+
+            // the angle gets to 45 degree of 1st or 3rd quadrant, the brighter it is
+            //if (fragCoord.x - centerCirScr.x > 0.0 && fragCoord.y - centerCirScr.y > 0.0) {
+            if (xDiffScr > 0.0 && yDiffScr > 0.0) {  
+                // The fragment is in the first quadrant.  		
+                float lerpCol = mix(0.0, 0.5, 1.0 - abs(angleBrightest - angleFromASin) / angleBrightest); 
+                boost = max(0.0, boost);
+                boost = lerpCol * lerpCol * 3.0; // creates a more drastic change
+            } else if (xDiffScr < 0.0 && yDiffScr < 0.0) {
+                // The fragment is in the third quadrant
+                // Magic numbers
+                float lerpCol = mix(0.0, 0.5, 1.0 -  abs(angleFromASin) / angleBrightest); 
+                boost = 0.3 - 2.0 * (lerpCol * lerpCol); // creates a more drastic change
+                boost = max(0.0, boost);
+                boost = min(1.0, boost);
+                boost = 25.0 * boost * boost * boost;
+            }
+            fragColor = fadeBySize * 20.0 * vec4(boost) + vec4(fadeBySize) *4.0;
+        }
+    }
+    return fragColor;
+}
+
+void main() {
+  vec2 fragc = gl_FragCoord.xy;
+  color = vec3(mainImage(fragc)) * 1.2f;
+  color += vec3(0, .01, .2);
+}
