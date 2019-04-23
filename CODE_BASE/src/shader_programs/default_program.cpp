@@ -22,12 +22,12 @@ void DefaultProgram::CreateDrawable(shared_ptr<Drawable>& d, GLuint texture_hand
 
     GLuint vbo = -1;
     GLuint vao = -1;
-    //GLuint ebo = -1; //------------
+    GLuint ebo = -1; //------------
 
     glGenVertexArrays(1, &vao);
     glBindVertexArray(vao);
 
-    GLsizei count = temp_pos.size();
+    GLsizei count = temp_pos.size(); //---- temp_pos.size();
 
     glGenBuffers(1, &vbo);
     glBindBuffer(GL_ARRAY_BUFFER, vbo);
@@ -57,8 +57,7 @@ void DefaultProgram::Draw(shared_ptr<Drawable>& d, const glm::mat4& global_trans
     //GLuint ebo = d->GetHandleLocation(HandleType::EBO);
 
     glUseProgram(program_);
-    //---
-    //glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ebo);
+   
 
     glBindVertexArray(vao);
 
@@ -74,11 +73,14 @@ void DefaultProgram::Draw(shared_ptr<Drawable>& d, const glm::mat4& global_trans
     glEnableVertexAttribArray(0);
     glBindBuffer(GL_ARRAY_BUFFER, vbo);
     glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, (void*)0);
+
+    //---
+    //glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ebo);
  
 
 
     /// DURING DRAW
-   glDrawArrays(GL_TRIANGLES, 0, d->ElementCount());
+   glDrawArrays(GL_TRIANGLE_STRIP, 0, d->ElementCount());
     /*if (d->indices().size() == 0) {
         std::cout << "here" << std::endl;
     }

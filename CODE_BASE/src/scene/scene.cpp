@@ -53,13 +53,13 @@ void Scene::RunWithDefaultSetup() {
 
     // SceneObjects
     user_character_ = shared_ptr<Character>(new Character(
-        "resources/wahoo/wahoo.obj", Filetype::OBJ, rain_prog, "player", glm::vec3(0.f)));
+        "resources/lowpoly_tree/Lowpoly_tree_sample.dae", Filetype::OBJ, rain_prog, "player", glm::vec3(0.f)));
     shared_ptr<SceneObject> random_mesh = shared_ptr<SceneObject>(new SceneObject(
-        "resources/suzanne.obj", Filetype::OBJ, threeD_prog, "random", glm::vec3(0.f)));
+        "resources/lowpoly_tree/Lowpoly_tree_sample.obj", Filetype::OBJ, threeD_prog, "random", glm::vec3(1, 1, 0.f)));
     
     shared_ptr<SceneObject> rain_floor = shared_ptr<SceneObject>(new SceneObject(
-        "resources/quad.obj", Filetype::OBJ, rain_prog, "rain floor", glm::vec3(0.f)));
-    rain_floor->SetGlobalTransform(glm::rotate(glm::scale(glm::mat4(1.f), glm::vec3(3.f)), 90.f, glm::vec3(1, 0, 0)));
+        "resources/quad.obj", Filetype::OBJ, rain_prog, "rain floor", glm::vec3(0)));
+    rain_floor->SetGlobalTransform(glm::rotate(glm::scale(glm::mat4(1.f), glm::vec3(100.f)), 90.f, glm::vec3(1, 0, 0)));
 
     screen_quad_ = unique_ptr<SceneObject>(new SceneObject(
         "resources/quad.obj", Filetype::OBJ, simple_program, "screenquad", glm::vec3(0.f)));

@@ -41,7 +41,12 @@ std::string GetBaseDir(const std::string& filepath) {
 void SceneObject::AssimpLoadObj(const char* file_path) {
     Assimp::Importer importer;
 
-    const aiScene* scene = importer.ReadFile(file_path, aiProcess_Triangulate | aiProcess_GenNormals);
+    const aiScene* scene = importer.ReadFile(file_path,
+        aiProcess_GenSmoothNormals |
+        aiProcess_CalcTangentSpace |
+        aiProcess_Triangulate |
+        aiProcess_JoinIdenticalVertices |
+        aiProcess_SortByPType);
     if ((!scene) || (scene->mFlags == AI_SCENE_FLAGS_INCOMPLETE) || (!scene->mRootNode)) {
         ErrorHandler::ThrowError("AssimpLoadObj error loading file: " + std::string(importer.GetErrorString()));
     }
@@ -61,6 +66,8 @@ void SceneObject::AssimpLoadObj(const char* file_path) {
         }
 
         for (unsigned int j = 0; j < assimpMesh->mNumFaces; ++j) {
+            auto faceI = assimpMesh->mFaces[i];
+            assert(faceI.mNumIndices == 3);
             indices.push_back(assimpMesh->mFaces[i].mIndices[0]);
             indices.push_back(assimpMesh->mFaces[i].mIndices[1]);
             indices.push_back(assimpMesh->mFaces[i].mIndices[2]);
@@ -71,9 +78,7 @@ void SceneObject::AssimpLoadObj(const char* file_path) {
 }
 
 void SceneObject::AssimpLoadCollada(const char* file_path) {
-    //Assimp::Importer importer;
-
-    // TODO: ASSIMP LOAD COLLADA - IMPLEMENT ME
+    AssimpLoadObj(file_path);
 }
 
 void SceneObject::Load(const char* file_path, Filetype mesh_file_type) {

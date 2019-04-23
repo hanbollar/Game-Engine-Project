@@ -51,7 +51,7 @@ void SimpleProgram::Draw(shared_ptr<Drawable>& d, const glm::mat4& global_transf
     glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, (void*)0);
 
     /// DURING DRAW
-    glDrawArrays(GL_TRIANGLES, 0, d->ElementCount());
+    glDrawArrays(GL_TRIANGLE_STRIP, 0, d->ElementCount());
 
     /// AFTER DRAW
     glDisableVertexAttribArray(0);

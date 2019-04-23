@@ -116,6 +116,7 @@ void MyWindow::initWindow() {
 	glDepthFunc(GL_LESS);
 	glEnable(GL_CULL_FACE);
 
+    glFrontFace(GL_CCW);
     glDisable(GL_CULL_FACE); // TODO: remove after all testing
 
 	// time between buffer and screen swaps
