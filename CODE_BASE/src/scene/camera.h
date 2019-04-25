@@ -4,8 +4,11 @@
 
 //A perspective projection camera
 //Receives its eye position and reference point from the scene XML file
-class Camera
-{
+class Camera {
+private:
+    const float MIN_ZOOM_DIST = 2.f;
+    const float MAX_ZOOM_DIST = 7.f;
+    const float MAX_ROT_ANGLE = 7* M_PI / 8.f;
 public:
 	Camera();
 	Camera(unsigned int w, unsigned int h);

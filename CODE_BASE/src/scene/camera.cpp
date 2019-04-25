@@ -23,6 +23,17 @@ Camera::Camera(const Camera &c)
 /*************************************/
 
 void Camera::RecomputeAttributes() {
+    // zoom restriction
+    /*float dist = glm::distance(eye, ref);
+    glm::vec3 ray = eye - ref;
+    ray = glm::normalize(ray);
+    if (dist < MIN_ZOOM_DIST) {
+        eye = ray * (MIN_ZOOM_DIST + FLT_EPSILON);
+    }
+    else if (dist > MAX_ZOOM_DIST) {
+        eye = ray * (MAX_ZOOM_DIST + FLT_EPSILON);
+    }*/
+
 	look = glm::normalize(ref - eye);
 	right = glm::normalize(glm::cross(look, world_up));
 	up = glm::cross(right, look);
@@ -68,8 +79,6 @@ glm::mat4 Camera::GetProj() {
 	return glm::perspective(fovy, width / (float)height, near_clip, far_clip);
 }
 
-// TODO: (camera) switch to using quaternions here?
-
 void Camera::RotateAboutUp(float deg) {
 	glm::mat4 rotation = glm::rotate(glm::mat4(1.0f), deg, up);
 	ref = ref - eye;
@@ -90,14 +99,26 @@ void Camera::RotateHorizontallyAboutPoint(float deg) {
     eye -= ref;
     eye = glm::vec3(rotation * glm::vec4(eye, 1));
     eye += ref;
+
     RecomputeAttributes();
 }
 
 void Camera::RotateVerticallyAboutPoint(float deg) {
     glm::mat4 rotation = glm::rotate(glm::mat4(1.f), deg, right);
-    eye -= ref;
-    eye = glm::vec3(rotation * glm::vec4(eye, 1));
-    eye += ref;
+    glm::vec3 temp_eye = eye - ref;
+    temp_eye = glm::vec3(rotation * glm::vec4(temp_eye, 1));
+    temp_eye += ref;
+
+    glm::vec3 eye_to_ref = ref - temp_eye;
+
+    // note:: don't have to worry about the div by 0 in the glm::sin bc have
+    // limited zoom to be within MIN/MAX_ZOOM_DIST values
+    //float angle = glm::asin(eye_to_ref.y / glm::sqrt(eye_to_ref.x * eye_to_ref.x + eye_to_ref.z * eye_to_ref.z));
+
+    //if (angle < MAX_ROT_ANGLE - FLT_EPSILON && angle > -MAX_ROT_ANGLE + FLT_EPSILON) {
+        eye = temp_eye;
+    //}
+
     RecomputeAttributes();
 }
 
@@ -134,10 +155,13 @@ void Camera::RotatePhi(float deg) {
 }
 
 void Camera::TranslateAlongLook(float amt) {
-	glm::vec3 translation = look * amt;
-	eye += translation;
-	ref += translation;
-	RecomputeAttributes();
+    glm::vec3 temp_eye = eye + look * amt;
+    if (glm::distance(temp_eye, ref) >= MIN_ZOOM_DIST && glm::distance(temp_eye, ref) <= MAX_ZOOM_DIST) {
+        eye = temp_eye;
+        //ref += translation;
+        RecomputeAttributes();
+        return;
+    }
 }
 
 void Camera::TranslateAlongRight(float amt) {

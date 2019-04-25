@@ -134,14 +134,12 @@ GLuint ShaderProgram::LoadShaderFile(const char* file_path, GLenum shader_type) 
             sstr << shader_stream.rdbuf();
             shader_code = sstr.str();
             shader_stream.close();
-        }
-        else {
-            cout << "Impossible to open " << file_path
-                << "Are you in the right directory ?" << endl;
-            throw;
+        } else {
+            ErrorHandler::ThrowError(
+                "Impossible to open " + std::string(file_path) + ". Are you in the right directory ?");
         }
     }
-    cout << "Compiling shader : " << file_path << endl;;
+    ErrorHandler::ShowError("Compiling shader : " + string(file_path));
     char const * source_pointer = shader_code.c_str();
     glShaderSource(shader_id, 1, &source_pointer, NULL);
     glCompileShader(shader_id);
@@ -150,7 +148,43 @@ GLuint ShaderProgram::LoadShaderFile(const char* file_path, GLenum shader_type) 
     return shader_id;
 }
 
-void ShaderProgram::LoadTextureFromFile(const char* file_path, GLuint& tex_id, bool createNewId) {
+GLuint ShaderProgram::RenderToTexture() {
+    // The framebuffer, which regroups 0, 1, or more textures, and 0 or 1 depth buffer.
+    GLuint FramebufferName = 0;
+    glGenFramebuffers(1, &FramebufferName);
+    glBindFramebuffer(GL_FRAMEBUFFER, FramebufferName);
+
+    // The texture we're going to render to
+    GLuint renderedTexture;
+    glGenTextures(1, &renderedTexture);
+
+    // "Bind" the newly created texture : all future texture functions will modify this texture
+    glBindTexture(GL_TEXTURE_2D, renderedTexture);
+
+    // Give an empty image to OpenGL ( the last "0" )
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, 1024, 768, 0, GL_RGB, GL_UNSIGNED_BYTE, 0);
+
+    // Poor filtering. Needed !
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+
+    // Set "renderedTexture" as our colour attachement #0
+    glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, renderedTexture, 0);
+
+    // Set the list of draw buffers.
+    GLenum DrawBuffers[1] = { GL_COLOR_ATTACHMENT0 };
+    glDrawBuffers(1, DrawBuffers); // "1" is the size of DrawBuffers
+
+    // Always check that our framebuffer is ok
+    if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
+        return false;
+
+    // Render to our framebuffer
+    glBindFramebuffer(GL_FRAMEBUFFER, FramebufferName);
+    glViewport(0, 0, 1024, 768); // Render on the whole framebuffer, complete from the lower left corner to the upper right
+}
+
+GLuint ShaderProgram::LoadTextureFromFile(const char* file_path) {
     if (file_path == nullptr) {
         ErrorHandler::ThrowError("Invalid texture file input!");
     }
@@ -173,11 +207,107 @@ void ShaderProgram::LoadTextureFromFile(const char* file_path, GLuint& tex_id, b
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, data);
     ErrorHandler::PrintGLErrorLog();
 
-    tex_id = texture_id;
-
     glBindTexture(GL_TEXTURE_2D, 0);
     stbi_image_free(data);
 
     ErrorHandler::PrintGLErrorLog();
+    return texture_id;
+}
+
+#define FOURCC_DXT1 0x31545844 // Equivalent to "DXT1" in ASCII
+#define FOURCC_DXT3 0x33545844 // Equivalent to "DXT3" in ASCII
+#define FOURCC_DXT5 0x35545844 // Equivalent to "DXT5" in ASCII
+
+GLuint ShaderProgram::LoadDDSTextureFromFile(const char* file_path) {
+    // used as a backup for DDS file loading instead of generic LoadTextureFromFile
+    // might use this function - depends on if generic works - tbd
+
+    // below code from: http://www.opengl-tutorial.org/intermediate-tutorials/tutorial-11-2d-text/
+
+    unsigned char header[124];
+
+    FILE *fp;
+
+    /* try to open the file */
+    fp = fopen(file_path, "rb");
+    if (fp == NULL) {
+        printf("%s could not be opened. Are you in the right directory ?\n", file_path); getchar();
+        return 0;
+    }
+
+    /* verify the type of file */
+    char filecode[4];
+    fread(filecode, 1, 4, fp);
+    if (strncmp(filecode, "DDS ", 4) != 0) {
+        fclose(fp);
+        return 0;
+    }
+
+    /* get the surface desc */
+    fread(&header, 124, 1, fp);
+
+    unsigned int height = *(unsigned int*)&(header[8]);
+    unsigned int width = *(unsigned int*)&(header[12]);
+    unsigned int linearSize = *(unsigned int*)&(header[16]);
+    unsigned int mipMapCount = *(unsigned int*)&(header[24]);
+    unsigned int fourCC = *(unsigned int*)&(header[80]);
+
+    unsigned char * buffer;
+    unsigned int bufsize;
+    /* how big is it going to be including all mipmaps? */
+    bufsize = mipMapCount > 1 ? linearSize * 2 : linearSize;
+    buffer = (unsigned char*)malloc(bufsize * sizeof(unsigned char));
+    fread(buffer, 1, bufsize, fp);
+    /* close the file pointer */
+    fclose(fp);
+
+    unsigned int components = (fourCC == FOURCC_DXT1) ? 3 : 4;
+    unsigned int format;
+    switch (fourCC)
+    {
+    case FOURCC_DXT1:
+        format = GL_COMPRESSED_RGBA_S3TC_DXT1_EXT;
+        break;
+    case FOURCC_DXT3:
+        format = GL_COMPRESSED_RGBA_S3TC_DXT3_EXT;
+        break;
+    case FOURCC_DXT5:
+        format = GL_COMPRESSED_RGBA_S3TC_DXT5_EXT;
+        break;
+    default:
+        free(buffer);
+        return 0;
+    }
+
+    // Create one OpenGL texture
+    GLuint textureID;
+    glGenTextures(1, &textureID);
+
+    // "Bind" the newly created texture : all future texture functions will modify this texture
+    glBindTexture(GL_TEXTURE_2D, textureID);
+    glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
+
+    unsigned int blockSize = (format == GL_COMPRESSED_RGBA_S3TC_DXT1_EXT) ? 8 : 16;
+    unsigned int offset = 0;
+
+    /* load the mipmaps */
+    for (unsigned int level = 0; level < mipMapCount && (width || height); ++level)
+    {
+        unsigned int size = ((width + 3) / 4)*((height + 3) / 4)*blockSize;
+        glCompressedTexImage2D(GL_TEXTURE_2D, level, format, width, height,
+            0, size, buffer + offset);
+
+        offset += size;
+        width /= 2;
+        height /= 2;
+
+        // Deal with Non-Power-Of-Two textures. This code is not included in the webpage to reduce clutter.
+        if (width < 1) width = 1;
+        if (height < 1) height = 1;
+    }
+
+    free(buffer);
+
+    return textureID;
 }
 

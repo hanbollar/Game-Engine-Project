@@ -56,7 +56,8 @@ typedef enum {
 
 typedef enum {
     START,
-    CONTROLLER,
+    CREDITS,
+    CONTROLS,
     MAINGAME,
 
     NUMSCENES
@@ -68,3 +69,20 @@ typedef enum {
 
     NUMAUDIOS
 } AudioChoices;
+
+typedef enum {
+    START_SELECTED = 0,
+    CREDITS_SELECTED = 1,
+    CONTROLS_SELECTED = 2,
+    ON_CREDITS,
+    ON_CONTROLS,
+    
+    NUM_TEXTURES
+} StartTextures;
+
+typedef enum {
+    TIMER,
+    GENERALSCREEN,
+
+    NUM_TEXTIDS
+} TextId;

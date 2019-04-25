@@ -21,6 +21,7 @@ protected:
 
 public:
     std::vector<std::shared_ptr<Drawable>> drawable_components_;
+    std::vector<std::shared_ptr<SceneObject>> attached_components_;
 
     SceneObject();
     SceneObject(
@@ -36,9 +37,11 @@ public:
     glm::mat4 GetGlobalTransform();
 
     void SetGlobalTransform(const glm::mat4& transf);
+    void SetTexture(GLuint tex_id);
 
     GLuint Program() { return program_; }
     const GLuint Program() const { return program_; }
 
-    void Draw(const glm::mat4& view_proj);
+    void CreateSelf();
+    void Draw(const glm::mat4 view_proj = glm::mat4(1.f));
 };

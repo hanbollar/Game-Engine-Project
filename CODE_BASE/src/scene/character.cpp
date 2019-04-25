@@ -25,6 +25,9 @@ void Character::MoveInDirection(std::shared_ptr<Camera>& camera, const glm::vec3
     camera->ref = glm::vec3(
         glm::translate(glm::mat4(1.f), offset) * glm::vec4(camera->ref, 1.f)
     );
+    camera->eye = glm::vec3(
+        glm::translate(glm::mat4(1.f), offset) * glm::vec4(camera->eye, 1.f)
+    );
     camera->RecomputeAttributes();
     global_transform_ = glm::translate(global_transform_, offset);
 }

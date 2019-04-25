@@ -8,15 +8,21 @@ Scene::Scene()
         generic_scene_objects_(vector<shared_ptr<SceneObject>>()),
         scene_characters_(vector<shared_ptr<Character>>()),
         audio_handler_(new AudioHandler()),
-        timer_(shared_ptr<Timer>(new Timer()))
+        text_handler_(new TextHandler()),
+        timer_(shared_ptr<Timer>(new Timer())),
+        on_selected_(0)
 {}
 
-Scene::Scene(Scene& s) {
-    generic_scene_objects_ = s.generic_scene_objects_;
-    scene_characters_ = s.scene_characters_;
-	camera_ = s.camera();
-    audio_handler_ = s.audio_handler_;
-}
+Scene::Scene(Scene& s)
+    :   WindowMaintainer(),
+        camera_(s.camera_),
+        generic_scene_objects_(s.generic_scene_objects_),
+        scene_characters_(s.scene_characters_),
+        audio_handler_(s.audio_handler_),
+        text_handler_(s.text_handler_),
+        timer_(s.timer_),
+        on_selected_(s.on_selected_)
+{}
 
 Scene::~Scene() {
 	camera_.reset();
@@ -34,52 +40,90 @@ glm::mat4 Scene::ViewProjection() {
 }
 
 void Scene::RunWithDefaultSetup() {
+    RunLoadingScreen();
+ 
+    StartGame();
+}
 
-    // ShaderPrograms
-	std::shared_ptr<ShaderProgram> rain_prog = std::shared_ptr<DefaultProgram>(new DefaultProgram(
-		"shader_files/threeD.vertexshader",
-		"shader_files/rain.fragmentshader"));
-    rain_prog->SetTimer(timer_);
-    rain_prog->SetResolution(vec2(800, 800));
+void Scene::RunLoadingScreen() {
+    loadingTextures_[0] = ShaderProgram::LoadTextureFromFile("resources/Load/1.jpg");
+    loadingTextures_[1] = ShaderProgram::LoadTextureFromFile("resources/Load/2.jpg");
+    loadingTextures_[2] = ShaderProgram::LoadTextureFromFile("resources/Load/3.jpg");
+    timer_->Play();
+
+    // screen
     std::shared_ptr<ShaderProgram> simple_program = std::shared_ptr<SimpleProgram>(new SimpleProgram(
         "shader_files/simple.vertexshader",
         "shader_files/simple.fragmentshader"));
-    std::shared_ptr<ShaderProgram> sky_program = std::shared_ptr<SimpleProgram>(new SimpleProgram(
-        "shader_files/simple.vertexshader",
-        "shader_files/sky.fragmentshader"));
+    screen_quad_ = unique_ptr<SceneObject>(new SceneObject(
+        "resources/quad.obj", Filetype::OBJ, simple_program, "screenquad", glm::vec3(0.f)));
+    screen_quad_->SetTexture(loadingTextures_[0]);
+    screen_quad_->CreateSelf();
+
+    screen_quad_->Draw(this->ViewProjection());
+}
+
+void Scene::StartGame() {
+    // filling in base screen info
+    selected_[StartTextures::START_SELECTED] = ShaderProgram::LoadTextureFromFile("resources/Start/1.jpg");
+    selected_[StartTextures::CREDITS_SELECTED] = ShaderProgram::LoadTextureFromFile("resources/Start/2.jpg");
+    selected_[StartTextures::CONTROLS_SELECTED] = ShaderProgram::LoadTextureFromFile("resources/Start/3.jpg");
+    selected_[StartTextures::ON_CREDITS] = ShaderProgram::LoadTextureFromFile("resources/Start/Credits.jpg");
+    selected_[StartTextures::ON_CONTROLS] = ShaderProgram::LoadTextureFromFile("resources/Start/base.jpg");
+
     std::shared_ptr<ShaderProgram> threeD_prog = std::shared_ptr<DefaultProgram>(new DefaultProgram(
         "shader_files/threeD.vertexshader",
         "shader_files/threeD.fragmentshader"));
 
+    std::shared_ptr<ShaderProgram> general_tex_prog = std::shared_ptr<DefaultProgram>(new DefaultProgram(
+        "shader_files/tex.vertexshader",
+        "shader_files/tex.fragmentshader"));
+
     // SceneObjects
     user_character_ = shared_ptr<Character>(new Character(
-        "resources/lowpoly_tree/Lowpoly_tree_sample.dae", Filetype::OBJ, rain_prog, "player", glm::vec3(0.f)));
+        "resources/quad.obj", Filetype::OBJ, general_tex_prog, "player", glm::vec3(0.f)));
+    user_character_->SetTexture(ShaderProgram::LoadTextureFromFile("resources/polka_dots.jpg"));
+    user_character_->CreateSelf();
+
+    std::shared_ptr<ShaderProgram> rain_prog = std::shared_ptr<DefaultProgram>(new DefaultProgram(
+        "shader_files/threeD.vertexshader",
+        "shader_files/rain.fragmentshader"));
+    rain_prog->SetTimer(timer_);
+    rain_prog->SetResolution(vec2(800, 800));
+
     shared_ptr<SceneObject> random_mesh = shared_ptr<SceneObject>(new SceneObject(
-        "resources/lowpoly_tree/Lowpoly_tree_sample.obj", Filetype::OBJ, threeD_prog, "random", glm::vec3(1, 1, 0.f)));
+        "resources/mainchar/walking_char_sequence.dae", Filetype::COLLADA, rain_prog, "random", glm::vec3(1, 1, 0.f)));
+    random_mesh->CreateSelf();
+    
     
     shared_ptr<SceneObject> rain_floor = shared_ptr<SceneObject>(new SceneObject(
-        "resources/quad.obj", Filetype::OBJ, rain_prog, "rain floor", glm::vec3(0)));
-    rain_floor->SetGlobalTransform(glm::rotate(glm::scale(glm::mat4(1.f), glm::vec3(100.f)), 90.f, glm::vec3(1, 0, 0)));
+        "resources/quad.obj", Filetype::OBJ, rain_prog, "rain floor", glm::vec3(0.f)));
+    float magnitude = 100.f;
+    rain_floor->SetGlobalTransform(
+        glm::translate(glm::mat4(1.f), 0.5f * glm::vec3(-magnitude, 0, -magnitude))
+        * glm::rotate(glm::scale(glm::mat4(1.f), glm::vec3(magnitude)), float(M_PI/2.f), glm::vec3(1, 0, 0)));
+    rain_floor->CreateSelf();
 
-    screen_quad_ = unique_ptr<SceneObject>(new SceneObject(
-        "resources/quad.obj", Filetype::OBJ, simple_program, "screenquad", glm::vec3(0.f)));
+    // sky
+    std::shared_ptr<ShaderProgram> sky_program = std::shared_ptr<SimpleProgram>(new SimpleProgram(
+        "shader_files/simple.vertexshader",
+        "shader_files/sky.fragmentshader"));
     sky_quad_ = unique_ptr<SceneObject>(new SceneObject(
         "resources/quad.obj", Filetype::OBJ, sky_program, "skyquad", glm::vec3(0.f)));
+    sky_quad_->CreateSelf();
 
     ErrorHandler::PrintGLErrorLog();
 
-    /*GLuint texture = -1;
-    GLuint texture_buff = -1;
-    ShaderProgram::LoadTextureFromFile("resources/wahoo/wahoo.bmp", texture, true);
-    
-    ShaderProgram::LoadTextureFromFile("resources/Start/play.jpg", start_selected_texture_, true);
-    ShaderProgram::LoadTextureFromFile("resources/Start/controls.jpg", controller_selected_texture_, true);
-    ShaderProgram::LoadTextureFromFile("resources/Start/controls.jpg", controller_texture_, true);
-*/
+    //user_character_->Attach(staff, );
 
     scene_characters_.push_back(user_character_);
 	generic_scene_objects_.push_back(random_mesh);
     generic_scene_objects_.push_back(rain_floor);
+
+    screen_quad_->SetTexture(StartTextures::START_SELECTED);
+
+    text_handler_->initText2D(10, 570, 15, "timer", TextId::TIMER);
+    text_handler_->initText2D(5, 5, 20, "general info", TextId::GENERALSCREEN);
 }
 
 void Scene::KeyPressEvent(int key, int scancode, int action, int mods) {
@@ -87,49 +131,63 @@ void Scene::KeyPressEvent(int key, int scancode, int action, int mods) {
 }
 
 void Scene::ControllerEvents(const unsigned char *button_events, const float *axes_events) {
-    if (on_scene_ == SceneList::START) {
+    int t = timer_->GetTime() * 10;
+
+    switch (on_scene_)
+    {
+    case SceneList::START:
+        
+        if (t % 5 != 0) {
+            //std::cout << "time: " << t << std::endl;
+            // delay for button pressing
+            return;
+        }
         if (button_events[JoystickButtons::A] == GLFW_PRESS) {
-            std::cout << "SELECT" << std::endl;
-            on_scene_ = start_selected_ ? MAINGAME : CONTROLLER;
-            if (on_scene_ == SceneList::MAINGAME && !game_started_) {
-                //RunWithDefaultSetup(); - this would have created the scene twice - change this to run game or sthg...
-                audio_handler_->StartPlayingSound();
-                audio_handler_->SetAudioSourcePos(glm::vec3(0.f));
-                timer_->Play();
-                playing_ = true;
+            if (on_selected_ == StartTextures::START_SELECTED) {
+                on_scene_ = SceneList::MAINGAME;
+                if (!game_started_) {
+                    audio_handler_->StartPlayingSound();
+                    audio_handler_->SetAudioSourcePos(glm::vec3(0.f));
+                    playing_ = true;
+                    game_started_ = true;
+                }
+            } else if (on_selected_ == StartTextures::CONTROLS_SELECTED) {
+                on_scene_ = SceneList::CONTROLS;
+            } else if (on_selected_ == StartTextures::CREDITS_SELECTED) {
+                on_scene_ = SceneList::CREDITS;
             }
 
             audio_handler_->PlaySingleSound(AudioChoices::BELL);
         }
 
-        if (abs(axes_events[JoystickAxes::MOVE_Y]) == 1) {
-            std::cout << "SWITCH OPTION" << std::endl;
-            start_selected_ = !start_selected_;
-
-            /*if (screen_handler_->current_texture_ == screen_handler_->start_screen_start_selected) {
-                screen_handler_->current_texture_ = screen_handler_->start_screen_controls_selected;
-            } else {
-                screen_handler_->current_texture_ = screen_handler_->start_screen_start_selected;
-            }*/
+        if (abs(axes_events[JoystickAxes::MOVE_Y]) > .6) {
+            on_selected_ += glm::sign(axes_events[JoystickAxes::MOVE_Y]) * 1;
+            on_selected_ = glm::clamp(on_selected_, 1 * StartTextures::START_SELECTED, 1 * StartTextures::CONTROLS_SELECTED);
         }
         
-        return;
-    } else if (on_scene_ == SceneList::CONTROLLER) {
+
+        break;
+    case SceneList::CREDITS:
         if (button_events[JoystickButtons::B] == GLFW_PRESS) {
-            std::cout << "EXIT CONTROLS" << std::endl;
+            on_scene_ = SceneList::START;
+            on_selected_ = StartTextures::START_SELECTED;
+        }
+        
+        break;
+    case SceneList::CONTROLS:
+        if (button_events[JoystickButtons::B] == GLFW_PRESS) {
             if (game_started_) {
                 on_scene_ = SceneList::MAINGAME;
                 timer_->Play();
                 playing_ = true;
             } else {
-                on_scene_ = START;
-               // screen_handler_->current_texture_ = screen_handler_->start_screen_start_selected;
-                start_selected_ = true;
+                on_scene_ = SceneList::START;
+                on_selected_ = StartTextures::START_SELECTED;
             }
         }
 
-        return;
-    } else if (on_scene_ == SceneList::MAINGAME) {
+        break;
+    case SceneList::MAINGAME:
         if (button_events[JoystickButtons::A] == GLFW_PRESS) {
             user_character_->Jump(camera_);
         }
@@ -146,7 +204,7 @@ void Scene::ControllerEvents(const unsigned char *button_events, const float *ax
         }
 
         if (button_events[JoystickButtons::Start_Pause] == GLFW_PRESS) {
-            on_scene_ = CONTROLLER;
+            on_scene_ = CONTROLS;
             playing_ = false;
             timer_->Pause();
         }
@@ -165,25 +223,25 @@ void Scene::ControllerEvents(const unsigned char *button_events, const float *ax
 
         if (axes_events[JoystickAxes::CAMROT_Y] == -1) {
             camera_->ref = user_character_->GetGlobalPosition();
-            camera_->RotateVerticallyAboutPoint(-0.01f);
+            camera_->RotateVerticallyAboutPoint(-0.1f);
         } else if (axes_events[JoystickAxes::CAMROT_Y] == 1) {
             camera_->ref = user_character_->GetGlobalPosition();
-            camera_->RotateVerticallyAboutPoint(0.01f);
+            camera_->RotateVerticallyAboutPoint(0.1f);
         }
 
         if (axes_events[JoystickAxes::CAMROT_X] == -1) {
             camera_->ref = user_character_->GetGlobalPosition();
-            camera_->RotateHorizontallyAboutPoint(-0.01f);
+            camera_->RotateHorizontallyAboutPoint(-0.1f);
         } else if (axes_events[JoystickAxes::CAMROT_X] == 1) {
             camera_->ref = user_character_->GetGlobalPosition();
-            camera_->RotateHorizontallyAboutPoint(0.01f);
+            camera_->RotateHorizontallyAboutPoint(0.1f);
         }
 
         // update viewing elements since camera and user were modified
         camera_->RecomputeAttributes();
 
-        return;
-    } else {
+        break;
+    default:
         ErrorHandler::ThrowError("on invalid scene");
     }
 }
@@ -197,9 +255,12 @@ void Scene::Update() {
     switch (on_scene_)
     {
     case SceneList::MAINGAME:
+        // sky background
         glDisable(GL_DEPTH_TEST);
         sky_quad_->Draw(this->ViewProjection());
         glEnable(GL_DEPTH_TEST);
+
+        // main scene attributes
         for (auto& so : generic_scene_objects_) {
             so->Draw(this->ViewProjection());
         }
@@ -207,16 +268,44 @@ void Scene::Update() {
             c->Draw(this->ViewProjection());
         }
 
+        // text overlay on screen
+        glDisable(GL_DEPTH_TEST);
+        text_handler_->writeToText2D(std::to_string(timer_->GetTime()), TextId::TIMER);
+        text_handler_->writeToText2D("MAIN GAME", TextId::GENERALSCREEN);
+
+        text_handler_->Draw();
+        glEnable(GL_DEPTH_TEST);
+
         break;
     case SceneList::START:
-        /*if (screen_quad_)
-            default_program_->Draw(screen_quad_, glm::mat4(1.f), this->ViewProjection());*/
-        screen_quad_->Draw(this->ViewProjection());
+        if (on_selected_ <= NUM_TEXTURES) {
+            screen_quad_->SetTexture(selected_[on_selected_]);
+        }
+        screen_quad_->Draw();
         break;
-    case SceneList::CONTROLLER:
-        /*if (screen_quad_)
-            default_program_->Draw(screen_quad_, glm::mat4(1.f), this->ViewProjection());*/
-        screen_quad_->Draw(this->ViewProjection());
+    case SceneList::CONTROLS:
+        if (on_selected_ <= NUM_TEXTURES) {
+            screen_quad_->SetTexture(selected_[StartTextures::ON_CONTROLS]);
+        }
+        screen_quad_->Draw();
+
+        glDisable(GL_DEPTH_TEST);
+        text_handler_->writeToText2D("Press B to Return", TextId::GENERALSCREEN);
+        text_handler_->Draw();
+        glEnable(GL_DEPTH_TEST);
+
+        break;
+    case SceneList::CREDITS:
+        if (on_selected_ <= NUM_TEXTURES) {
+            screen_quad_->SetTexture(selected_[StartTextures::ON_CREDITS]);
+        }
+        screen_quad_->Draw();
+
+        glDisable(GL_DEPTH_TEST);
+        text_handler_->writeToText2D("Press B to Return", TextId::GENERALSCREEN);
+        text_handler_->Draw();
+        glEnable(GL_DEPTH_TEST);
+
         break;
     default: 
         ErrorHandler::ThrowError("On invalid Scene");

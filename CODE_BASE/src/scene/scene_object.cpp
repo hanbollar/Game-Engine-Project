@@ -43,9 +43,10 @@ void SceneObject::AssimpLoadObj(const char* file_path) {
 
     const aiScene* scene = importer.ReadFile(file_path,
         aiProcess_GenSmoothNormals |
+        aiProcess_GenUVCoords |
         aiProcess_CalcTangentSpace |
         aiProcess_Triangulate |
-        aiProcess_JoinIdenticalVertices |
+        //aiProcess_JoinIdenticalVertices |
         aiProcess_SortByPType);
     if ((!scene) || (scene->mFlags == AI_SCENE_FLAGS_INCOMPLETE) || (!scene->mRootNode)) {
         ErrorHandler::ThrowError("AssimpLoadObj error loading file: " + std::string(importer.GetErrorString()));
@@ -65,16 +66,32 @@ void SceneObject::AssimpLoadObj(const char* file_path) {
             ));
         }
 
-        for (unsigned int j = 0; j < assimpMesh->mNumFaces; ++j) {
+        /*for (unsigned int j = 0; j < assimpMesh->mNumFaces; ++j) {
             auto faceI = assimpMesh->mFaces[i];
             assert(faceI.mNumIndices == 3);
             indices.push_back(assimpMesh->mFaces[i].mIndices[0]);
             indices.push_back(assimpMesh->mFaces[i].mIndices[1]);
             indices.push_back(assimpMesh->mFaces[i].mIndices[2]);
-        }
+        }*/
 
         drawable_components_.push_back(std::shared_ptr<Drawable>(new Drawable(&vertices, &indices, GL_TRIANGLES)));
     }
+
+    /*std::vector<GLuint> m_Textures_ = NULL;
+    for (unsigned int i = 0; i < scene->mNumMaterials; i++) {
+        const aiMaterial* pMaterial = scene->mMaterials[i];
+
+      
+        if (pMaterial->GetTextureCount(aiTextureType_DIFFUSE) > 0) {
+            aiString path;
+
+            if (pMaterial->GetTexture(aiTextureType_DIFFUSE, 0, &path, NULL, NULL, NULL, NULL, NULL) == AI_SUCCESS) {
+                GLuint tex_id = -1;
+                ShaderProgram::LoadTextureFromFile(path.C_Str(), tex_id, true);
+                m_Textures[i].push_back(tex_id);
+            }
+        }
+    }*/
 }
 
 void SceneObject::AssimpLoadCollada(const char* file_path) {
@@ -88,14 +105,6 @@ void SceneObject::Load(const char* file_path, Filetype mesh_file_type) {
         AssimpLoadObj(file_path);
     } else if (mesh_file_type == Filetype::COLLADA) {
         AssimpLoadCollada(file_path);
-    }
-
-    if (!program_) {
-        return;
-    }
-    for (std::shared_ptr<Drawable> d : drawable_components_) {
-        GLuint texture_handle = -1; // NEED BETTER WAY TO HANDLE TEXTURE
-        program_ptr_->CreateDrawable(d, texture_handle); //----------------------this is where issue is.
     }
 }
 
@@ -123,9 +132,32 @@ void SceneObject::SetGlobalTransform(const glm::mat4& transf) {
     global_transform_ = transf;
 }
 
-void SceneObject::Draw(const glm::mat4& view_proj) {
+/***********************************************************/
+/****************** DRAWING INFORMATION ********************/
+/***********************************************************/
+
+void SceneObject::SetTexture(GLuint tex_id) {
+    for (std::shared_ptr<Drawable> d : this->drawable_components_) {
+        d->SetHandleLocation(HandleType::TEX, tex_id);
+    }
+}
+
+void SceneObject::CreateSelf() {
+    if (!program_) {
+        return;
+    }
+    for (std::shared_ptr<Drawable> d : drawable_components_) {
+        //GLuint texture_handle = -1; // NEED BETTER WAY TO HANDLE TEXTURE
+        program_ptr_->CreateDrawable(d, d->GetHandleLocation(HandleType::TEX)); //----------------------this is where issue is.
+    }
+}
+void SceneObject::Draw(const glm::mat4 view_proj) {
     for (std::shared_ptr<Drawable> d : drawable_components_) {
         program_ptr_->Draw(d, global_transform_, view_proj);
+    }
+
+    for (std::shared_ptr<SceneObject> s : attached_components_) {
+        s->Draw(view_proj * global_transform_);
     }
 }
 

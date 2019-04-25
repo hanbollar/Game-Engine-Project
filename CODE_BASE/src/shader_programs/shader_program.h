@@ -61,6 +61,10 @@ public:
 
     static GLuint LoadShaderProgramFiles(const char* vertex_file_path, const char* fragment_file_path);
     static GLuint LoadShaderFile(const char* file_path, GLenum shader_type);
-    static void LoadTextureFromFile(const char* file_path, GLuint& tex_id, bool createNewId);
+
+    static GLuint RenderToTexture();
+
+    static GLuint LoadTextureFromFile(const char* file_path);
+    static GLuint LoadDDSTextureFromFile(const char* file_path);
 };
 
