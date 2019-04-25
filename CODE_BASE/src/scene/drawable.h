@@ -27,15 +27,15 @@ protected:
 
 	map<HandleType, GLuint> using_handle_locations_ = {};
 
-	vector<unsigned short> indices_;
+	vector<int> indices_;
     vector<Vertex> vertices_;
 
 public:
     Drawable();
-    Drawable(vector<Vertex>* pos, vector<unsigned short>* idx, const GLenum& draw_mode);
+    Drawable(vector<Vertex>* pos, vector<int>* idx, const GLenum& draw_mode);
 	~Drawable();
 
-	vector<unsigned short>& indices() { return indices_; }
+	vector<int>& indices() { return indices_; }
 	vector<Vertex>& vertices() { return vertices_; }
 
 	void SetHandleLocation(HandleType type, GLuint& location) {

@@ -44,6 +44,15 @@ private:
 
     shared_ptr<Drawable> blank_quad_ = nullptr;
 
+    void SetupCatLocations();
+    void HandleCatLocationCheck();
+    int on_cat_ = 0;
+    glm::vec3 cat_loc_[3];
+    bool cat_in_sound_dist_ = false;
+    bool cat_in_min_dist_ = false;
+    const float CAT_SOUND_MIN_DIST_ = 20.f;
+    const float CAT_ALMOST_FOUND_MIN_DIST_ = 2.f;
+
 public:
 	Scene();
     Scene(Scene& s);

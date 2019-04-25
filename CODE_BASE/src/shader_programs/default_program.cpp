@@ -14,7 +14,7 @@ void DefaultProgram::CreateDrawable(shared_ptr<Drawable>& d, GLuint texture_hand
     ErrorHandler::PrintGLErrorLog();
     UseMe();
 
-    vector<unsigned short> indices = d->indices();
+    vector<int> indices = d->indices();
     vector<Vertex> data = d->vertices();
 
     vector<glm::vec3> temp_pos;
@@ -60,7 +60,7 @@ GLuint DefaultProgram::BeforeRenderToTexture() {
     glBindTexture(GL_TEXTURE_2D, tex_rendered);
 
     // set up our texture
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, 1024, 768, 0, GL_RGB, GL_UNSIGNED_BYTE, 0);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, SCR_WIDTH, SCR_HEIGHT, 0, GL_RGB, GL_UNSIGNED_BYTE, 0);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 
@@ -99,7 +99,6 @@ void DefaultProgram::Draw(shared_ptr<Drawable> d, const glm::mat4& global_transf
     }*/
 
     glUseProgram(program_);
-   
     glBindVertexArray(vao);
 
     ShaderProgram::SetUniformMat4(global_transform, GLuint(0));

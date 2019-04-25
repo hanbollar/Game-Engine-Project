@@ -63,8 +63,8 @@ void SceneObject::AssimpLoadObj(const char* file_path) {
     for (unsigned int i = 0; i < scene->mNumMeshes; ++i) {
         const aiMesh* assimpMesh = scene->mMeshes[i];
 
-        std::vector<Vertex> vertices;
-        std::vector<unsigned short> indices;
+        std::vector<Vertex> vertices = std::vector<Vertex>();
+        std::vector<int> indices = std::vector<int>();
 
         for (unsigned int j = 0; j < assimpMesh->mNumVertices; ++j) {
             vertices.push_back(Vertex(
@@ -74,13 +74,20 @@ void SceneObject::AssimpLoadObj(const char* file_path) {
             ));
         }
 
-        /*for (unsigned int j = 0; j < assimpMesh->mNumFaces; ++j) {
-            auto faceI = assimpMesh->mFaces[i];
+        for (unsigned int j = 0; j < assimpMesh->mNumFaces; ++j) {
+            // ibo was causing loading errors due to some improperly formatted obj and dae 
+            // files I'm using as assets.
+            // commenting out for now.
+            /*auto faceI = assimpMesh->mFaces[i];
+            if (faceI.mNumIndices < 3) {
+                continue;
+            }
             assert(faceI.mNumIndices == 3);
+            
             indices.push_back(assimpMesh->mFaces[i].mIndices[0]);
             indices.push_back(assimpMesh->mFaces[i].mIndices[1]);
-            indices.push_back(assimpMesh->mFaces[i].mIndices[2]);
-        }*/
+            indices.push_back(assimpMesh->mFaces[i].mIndices[2]);*/
+        }
 
         drawable_components_.push_back(std::shared_ptr<Drawable>(new Drawable(&vertices, &indices, GL_TRIANGLES)));
     }

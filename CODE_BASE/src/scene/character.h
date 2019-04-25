@@ -19,6 +19,7 @@ public:
     float moving_magnitude_ = 1;
 
     void MoveInDirection(std::shared_ptr<Camera>& c, const glm::vec3& offset);
+    void TurnInDirection(bool positive);
     void Jump(std::shared_ptr<Camera>& c);
     void Crouch(std::shared_ptr<Camera>& c);
 };

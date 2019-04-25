@@ -14,7 +14,7 @@ void SimpleProgram::CreateDrawable(shared_ptr<Drawable>& d, GLuint texture_handl
     ErrorHandler::PrintGLErrorLog();
     UseMe();
 
-    vector<unsigned short> indices = d->indices();
+    vector<int> indices = d->indices();
     vector<Vertex> data = d->vertices();
 
     vector<glm::vec3> temp_pos;

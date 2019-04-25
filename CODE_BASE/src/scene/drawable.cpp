@@ -1,10 +1,10 @@
 #include "drawable.h"
 
 Drawable::Drawable()
-    : vertices_(vector<Vertex>()), indices_(vector<unsigned short>()), draw_mode_(GL_TRIANGLES), count_(0)
+    : vertices_(vector<Vertex>()), indices_(vector<int>()), draw_mode_(GL_TRIANGLES), count_(0)
 {}
 
-Drawable::Drawable(vector<Vertex>* vertices, vector<unsigned short>* idx, const GLenum& draw_mode)
+Drawable::Drawable(vector<Vertex>* vertices, vector<int>* idx, const GLenum& draw_mode)
     : vertices_(*vertices), indices_(*idx), draw_mode_(draw_mode), count_(static_cast<GLsizei>(idx->size()))
 {}
 

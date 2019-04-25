@@ -65,7 +65,17 @@ void Scene::RunLoadingScreen() {
     screen_quad_->Draw(this->ViewProjection());
 }
 
+void Scene::SetupCatLocations() {
+    const glm::vec3 MIN_LOC(-800, 0, -800);
+    const glm::vec3 MAX_LOC(800, 0, 800);
+    cat_loc_[0] = LERP(MIN_LOC, MAX_LOC, rand() / RAND_MAX);
+    cat_loc_[1] = LERP(MIN_LOC, MAX_LOC, rand() / RAND_MAX);
+    cat_loc_[2] = LERP(MIN_LOC, MAX_LOC, rand() / RAND_MAX);
+}
+
 void Scene::StartGame() {
+    camera_->eye = glm::vec3(10, 10, 10);
+
     // filling in base screen info
     selected_[StartTextures::START_SELECTED] = ShaderProgram::LoadTextureFromFile("resources/Start/1.jpg");
     selected_[StartTextures::CREDITS_SELECTED] = ShaderProgram::LoadTextureFromFile("resources/Start/2.jpg");
@@ -81,6 +91,9 @@ void Scene::StartGame() {
         "shader_files/tex.vertexshader",
         "shader_files/tex.fragmentshader"));
 
+    blank_quad_ = std::shared_ptr<Drawable>(new Drawable());
+    blank_quad_->CreateBlankQuad();
+
     // SceneObjects
     user_character_ = shared_ptr<Character>(new Character(
         "resources/quad.obj", Filetype::OBJ, general_tex_prog, "player", glm::vec3(0.f)));
@@ -92,9 +105,6 @@ void Scene::StartGame() {
         "shader_files/rain.fragmentshader"));
     rain_prog_->SetTimer(timer_);
     rain_prog_->SetResolution(vec2(800, 800));
-
-    blank_quad_ = std::shared_ptr<Drawable>(new Drawable());
-    blank_quad_->CreateBlankQuad();
 
     shared_ptr<SceneObject> random_mesh = shared_ptr<SceneObject>(new SceneObject(
         "resources/mainchar/walking_char_sequence.dae", Filetype::COLLADA, threeD_prog, "random", glm::vec3(1, 1, 0.f)));
@@ -108,6 +118,10 @@ void Scene::StartGame() {
         * glm::rotate(glm::scale(glm::mat4(1.f), glm::vec3(magnitude)), float(M_PI/2.f), glm::vec3(1, 0, 0)));
     rain_floor->CreateSelf();
 
+    shared_ptr<SceneObject> tree = shared_ptr<SceneObject>(new SceneObject(
+        "resources/grass/grass_low_poly.dae", Filetype::COLLADA, threeD_prog, "tree", glm::vec3(0, 0, 2)));
+    tree->CreateSelf();
+    
     std::shared_ptr<ShaderProgram> grass_tex_prog = std::shared_ptr<DefaultProgram>(new DefaultProgram(
         "shader_files/grass_tex.vertexshader",
         "shader_files/grass_tex.fragmentshader"));
@@ -116,18 +130,7 @@ void Scene::StartGame() {
     grass->SetTextures(ShaderProgram::LoadTextureFromFile("resources/grass/low_poly_grass2_fix.png"),
                        ShaderProgram::LoadTextureFromFile("resources/grass/low_poly_grass_opacity.png"));
     grass->CreateSelf();
-
-    /*std::shared_ptr<ShaderProgram> tree_tex_prog = std::shared_ptr<DefaultProgram>(new DefaultProgram(
-        "shader_files/tex.vertexshader",
-        "shader_files/tex.fragmentshader"
-    ));*/
-    /*shared_ptr<SceneObject> tree = shared_ptr<SceneObject>(new SceneObject(
-        "resource/grass/grass_low_poly.DAE", Filetype::COLLADA, threeD_prog, "tree", glm::vec3(0, 0, 1)));
-    tree->SetTextures(ShaderProgram::LoadTextureFromFile("resources/grass/low_poly_grass2_fix.png"),
-        ShaderProgram::LoadTextureFromFile("resources/grass/low_poly_grass_opacity.png"));
-    tree->CreateSelf();*/
-
-    // sky
+    
     std::shared_ptr<ShaderProgram> sky_program = std::shared_ptr<SimpleProgram>(new SimpleProgram(
         "shader_files/simple.vertexshader",
         "shader_files/sky.fragmentshader"));
@@ -136,16 +139,17 @@ void Scene::StartGame() {
 
     ErrorHandler::PrintGLErrorLog();
 
-    //user_character_->Attach(staff, );
+    //user_character_->Attach(staff, ); // TODO:: ADD ATTACHING FEATURE (just add to sub objects for the sceneobject)
 
+    // adding in scene objects that are opaque
     scene_characters_.push_back(user_character_);
 	generic_scene_objects_.push_back(random_mesh);
     generic_scene_objects_.push_back(rain_floor);
-
-    RandomlyAddToScene(grass, 1000, glm::vec3(0.2), glm::vec3(1.f), glm::ivec3(100, 1, 100), glm::vec3(0));
-    generic_scene_objects_.push_back(grass);
-    RandomlyAddToScene(tree, 100, glm::vec3(1.f), glm::vec3(2.f), glm::ivec3(50, 1, 50), glm::vec3(50));
+    RandomlyAddToScene(tree, 10, glm::vec3(1, 10, 1), glm::vec3(2, 15, 2), glm::ivec3(50, 1, 50), glm::vec3(10, 0, 10));
     generic_scene_objects_.push_back(tree);
+    // adding in scene objects that have opacity
+    RandomlyAddToScene(grass, 500, glm::vec3(0.2), glm::vec3(1.f), glm::ivec3(100, 1, 100), glm::vec3(0));
+    generic_scene_objects_.push_back(grass);
 
     screen_quad_->SetTexture(StartTextures::START_SELECTED);
 
@@ -228,6 +232,7 @@ void Scene::ControllerEvents(const unsigned char *button_events, const float *ax
             if (game_started_) {
                 on_scene_ = SceneList::MAINGAME;
                 timer_->Play();
+                text_handler_->writeToText2D("MAIN GAME", TextId::GENERALSCREEN);
                 playing_ = true;
             } else {
                 on_scene_ = SceneList::START;
@@ -259,9 +264,9 @@ void Scene::ControllerEvents(const unsigned char *button_events, const float *ax
         }
 
         if (axes_events[JoystickAxes::MOVE_X] == -1) {
-            user_character_->MoveInDirection(camera_, glm::vec3(1, 0, 0));
+            user_character_->TurnInDirection(true);
         } else if (axes_events[JoystickAxes::MOVE_X] == 1) {
-            user_character_->MoveInDirection(camera_, glm::vec3(-1, 0, 0));
+            user_character_->TurnInDirection(false);
         }
 
         if (axes_events[JoystickAxes::MOVE_Y] == 1) {
@@ -295,8 +300,42 @@ void Scene::ControllerEvents(const unsigned char *button_events, const float *ax
     }
 }
 
+void Scene::HandleCatLocationCheck() {
+    // TODO FINISH HERE ---------------------------------------------------------------
+    if (glm::distance(user_character_->GetGlobalPosition(), cat_loc_[on_cat_]) < CAT_ALMOST_FOUND_MIN_DIST_) {
+        if (cat_in_min_dist_) {
+            // still valid
+            //audio_handler_->Update();
+            text_handler_->writeToText2D("YOU'RE ALMOST THERE! PRESS A WHEN YOU SEE THE CAT!", TextId::GENERALSCREEN);
+        } else {
+            // no longer valid
+        }
+    } else {
+        // still not valid
+        cat_in_min_dist_ = false;
+        text_handler_->writeToText2D("MAIN GAME", TextId::GENERALSCREEN);
+    }
+    
+    
+    if (glm::distance(user_character_->GetGlobalPosition(), cat_loc_[on_cat_]) < CAT_SOUND_MIN_DIST_) {
+        if (cat_in_sound_dist_) {
+            // still valid
+            text_handler_->writeToText2D("YOU'RE CLOSE! KEEP LOOKING!", TextId::GENERALSCREEN);
+        } else {
+            // no longer valid
+            text_handler_->writeToText2D("MAIN GAME", TextId::GENERALSCREEN);
+        }
+    } else {
+        // not valid
+        cat_in_sound_dist_ = false;
+        text_handler_->writeToText2D("MAIN GAME", TextId::GENERALSCREEN);
+    }
+}
+
 void Scene::Update() {
     if (playing_) {
+        HandleCatLocationCheck();
+        
         audio_handler_->Update(user_character_->GetGlobalPosition());
         timer_->Tick();
     }
@@ -320,7 +359,7 @@ void Scene::Update() {
         // text overlay on screen
         glDisable(GL_DEPTH_TEST);
         text_handler_->writeToText2D(std::to_string(timer_->GetTime()), TextId::TIMER);
-        text_handler_->writeToText2D("MAIN GAME", TextId::GENERALSCREEN);
+        
 
         text_handler_->Draw();
         glEnable(GL_DEPTH_TEST);
