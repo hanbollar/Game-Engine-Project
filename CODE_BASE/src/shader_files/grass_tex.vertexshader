@@ -1,0 +1,14 @@
+#version 430 core
+layout(location = 0) in vec3 position;
+layout(location = 1) in vec2 uvs;
+
+layout(location = 0) uniform mat4 model;
+layout(location = 1) uniform mat4 view_projection;
+
+out vec2 uv_location;
+
+void main(){
+	gl_Position =  view_projection * model * vec4(position, 1.f);
+    uv_location = vec2(uvs.x, 1 - uvs.y);
+}
+

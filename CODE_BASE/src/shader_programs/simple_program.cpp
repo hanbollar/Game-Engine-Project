@@ -50,7 +50,7 @@ void SimpleProgram::CreateDrawable(shared_ptr<Drawable>& d, GLuint texture_handl
     d->SetElementCount(count);
 }
 
-void SimpleProgram::Draw(shared_ptr<Drawable>& d, const glm::mat4& global_transform, const glm::mat4& view_proj) {
+void SimpleProgram::Draw(shared_ptr<Drawable> d, const glm::mat4& global_transform, const glm::mat4& view_proj) {
     /// BEFORE DRAW
     GLuint vbo = d->GetHandleLocation(HandleType::VBO);
     GLuint vao = d->GetHandleLocation(HandleType::VAO);

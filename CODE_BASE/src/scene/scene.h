@@ -18,6 +18,8 @@ private:
     shared_ptr<AudioHandler> audio_handler_;
     shared_ptr<TextHandler> text_handler_;
 
+    //shared_ptr<DefaultProgram> rain_prog_; // TODO: need a better way to interface with this...
+
     bool game_started_ = false;
     bool playing_ = false;
 
@@ -40,6 +42,8 @@ private:
     unique_ptr<SceneObject> screen_quad_ = nullptr;
     unique_ptr<SceneObject> sky_quad_ = nullptr;
 
+    shared_ptr<Drawable> blank_quad_ = nullptr;
+
 public:
 	Scene();
     Scene(Scene& s);
@@ -52,7 +56,11 @@ public:
 
     void RunLoadingScreen();
     void StartGame();
-    //void DrawFBOItems();
+    
+    void RandomlyAddToScene(
+        std::shared_ptr<SceneObject> scene_obj, const unsigned int& num, 
+        const glm::fvec3& min_scale, const glm::fvec3&max_scale,
+        const glm::ivec3& rand_dim, const glm::vec3& center);
 
     virtual const glm::mat4& ViewProjection() const;
     virtual glm::mat4 ViewProjection();

@@ -10,7 +10,8 @@ public:
 	~DefaultProgram();
 
 	virtual void CreateDrawable(shared_ptr<Drawable>& mesh, GLuint texture_handle = -1);
-    virtual void Draw(shared_ptr<Drawable>& d, const glm::mat4& global_transform, const glm::mat4& view_proj);
+    virtual void Draw(shared_ptr<Drawable> d, const glm::mat4& global_transform, const glm::mat4& view_proj);
 
-    void CreateFrameBufferTexture();
+    GLuint BeforeRenderToTexture();
+    void AfterRenderToTexture();
 };

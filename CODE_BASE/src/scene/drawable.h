@@ -61,4 +61,6 @@ public:
     GLsizei DrawMode() { return draw_mode_; }
 
     void ClearDrawable();
+
+    void CreateBlankQuad();
 };

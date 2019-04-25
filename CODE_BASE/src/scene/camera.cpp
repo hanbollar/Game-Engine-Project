@@ -156,12 +156,12 @@ void Camera::RotatePhi(float deg) {
 
 void Camera::TranslateAlongLook(float amt) {
     glm::vec3 temp_eye = eye + look * amt;
-    if (glm::distance(temp_eye, ref) >= MIN_ZOOM_DIST && glm::distance(temp_eye, ref) <= MAX_ZOOM_DIST) {
+    //if (glm::distance(temp_eye, ref) >= MIN_ZOOM_DIST && glm::distance(temp_eye, ref) <= MAX_ZOOM_DIST) {
         eye = temp_eye;
         //ref += translation;
         RecomputeAttributes();
         return;
-    }
+    //}
 }
 
 void Camera::TranslateAlongRight(float amt) {

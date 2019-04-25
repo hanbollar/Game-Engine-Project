@@ -50,11 +50,53 @@ void DefaultProgram::CreateDrawable(shared_ptr<Drawable>& d, GLuint texture_hand
     d->SetElementCount(count);
 }
 
-void DefaultProgram::Draw(shared_ptr<Drawable>& d, const glm::mat4& global_transform, const glm::mat4& view_proj) {
+GLuint DefaultProgram::BeforeRenderToTexture() {
+    GLuint fbo = -1;
+    glGenFramebuffers(1, &fbo);
+    glBindFramebuffer(GL_FRAMEBUFFER, fbo);
+
+    GLuint tex_rendered;
+    glGenTextures(1, &tex_rendered);
+    glBindTexture(GL_TEXTURE_2D, tex_rendered);
+
+    // set up our texture
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, 1024, 768, 0, GL_RGB, GL_UNSIGNED_BYTE, 0);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+
+    // Set "renderedTexture" as our colour attachement #0
+    glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, tex_rendered, 0);
+
+    // Set the list of draw buffers.
+    const GLenum DrawBuffers[1] = { GL_COLOR_ATTACHMENT0 };
+    glDrawBuffers(1, DrawBuffers); // "1" is the size of DrawBuffers
+
+    // Always check that our framebuffer is ok
+    if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
+        return false;
+
+    glBindFramebuffer(GL_FRAMEBUFFER, fbo);
+    glViewport(0, 0, SCR_WIDTH, SCR_HEIGHT);
+
+    return tex_rendered;
+}
+
+void DefaultProgram::AfterRenderToTexture() {
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+    glViewport(0, 0, SCR_WIDTH, SCR_HEIGHT);
+}
+
+void DefaultProgram::Draw(shared_ptr<Drawable> d, const glm::mat4& global_transform, const glm::mat4& view_proj) {    
     /// BEFORE DRAW
     GLuint vbo = d->GetHandleLocation(HandleType::VBO);
     GLuint vao = d->GetHandleLocation(HandleType::VAO);
     GLuint uvb = d->GetHandleLocation(HandleType::UVS);
+
+   // GLuint tex_rendered = -1;
+
+    /*if (d->UsingHandle(HandleType::FBO)) {
+        tex_rendered = BeforeRenderToTexture();
+    }*/
 
     glUseProgram(program_);
    
@@ -73,10 +115,20 @@ void DefaultProgram::Draw(shared_ptr<Drawable>& d, const glm::mat4& global_trans
     glBindBuffer(GL_ARRAY_BUFFER, vbo);
     glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, (void*)0);
 
+    bool allow_opacity = false;
+
     if (d->UsingHandle(HandleType::TEX)) {
         glActiveTexture(GL_TEXTURE0);
         glBindTexture(GL_TEXTURE_2D, d->GetHandleLocation(HandleType::TEX));
         ShaderProgram::SetUniformInt(0, GLuint(2));
+
+        if (d->UsingHandle(HandleType::TEX2)) {
+            glActiveTexture(GL_TEXTURE1);
+            glBindTexture(GL_TEXTURE_2D, d->GetHandleLocation(HandleType::TEX2));
+            ShaderProgram::SetUniformInt(0, GLuint(3));
+
+            allow_opacity = true;
+        }
 
         glEnableVertexAttribArray(1);
         glBindBuffer(GL_ARRAY_BUFFER, uvb);
@@ -84,62 +136,20 @@ void DefaultProgram::Draw(shared_ptr<Drawable>& d, const glm::mat4& global_trans
     }
 
     /// DURING DRAW
-   glDrawArrays(GL_TRIANGLES /*GL_TRIANGLE_STRIP*/, 0, d->ElementCount());
+    if (allow_opacity) {
+        glEnable(GL_BLEND);
+        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+        glDrawArrays(GL_TRIANGLES, 0, d->ElementCount());
+        glDisable(GL_BLEND);
+    } else {
+        glDrawArrays(GL_TRIANGLES, 0, d->ElementCount());
+    }
+    
 
     /// AFTER DRAW
     glDisableVertexAttribArray(0);
+
+    /*if (d->UsingHandle(HandleType::FBO)) {
+        AfterRenderToTexture();
+    }*/
 }
-
-/*
-void DefaultProgram::CreateFrameBufferTexture() {
-    GLuint fbo = -1;
-    glGenFramebuffers(1, &fbo);
-    glBindFramebuffer(GL_FRAMEBUFFER, fbo);
-
-    GLuint renderedTexture;
-	glGenTextures(1, &renderedTexture);
-	
-	// "Bind" the newly created texture : all future texture functions will modify this texture
-	glBindTexture(GL_TEXTURE_2D, renderedTexture);
-
-	// Give an empty image to OpenGL ( the last "0" means "empty" )
-    const int width_height = 500;
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width_height, width_height, 0,GL_RGB, GL_UNSIGNED_BYTE, 0);
-
-	// Poor filtering
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST); 
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-
-    // Set "renderedTexture" as our colour attachement #0
-    glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, renderedTexture, 0);
-
-    if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE) {
-        ErrorHandler::ThrowError("Unexpected Configuration");
-    }
-
-    // The fullscreen quad's FBO
-    static const GLfloat g_quad_vertex_buffer_data[] = {
-        -1.0f, -1.0f, 0.0f,
-         1.0f, -1.0f, 0.0f,
-        -1.0f,  1.0f, 0.0f,
-        -1.0f,  1.0f, 0.0f,
-         1.0f, -1.0f, 0.0f,
-         1.0f,  1.0f, 0.0f,
-    };
-
-    GLuint quad_vertexbuffer;
-    glGenBuffers(1, &quad_vertexbuffer);
-    glBindBuffer(GL_ARRAY_BUFFER, quad_vertexbuffer);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(g_quad_vertex_buffer_data), g_quad_vertex_buffer_data, GL_STATIC_DRAW);
-
-    // Create and compile our GLSL program from the shaders
-    GLuint quad_programID = LoadShaders("Passthrough.vertexshader", "WobblyTexture.fragmentshader");
-    GLuint texID = glGetUniformLocation(quad_programID, "renderedTexture");
-    GLuint timeID = glGetUniformLocation(quad_programID, "time");
-}
-
-void DefaultProgram::RenderToTexture() {
-
-}*/

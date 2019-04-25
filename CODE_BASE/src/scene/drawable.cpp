@@ -46,3 +46,20 @@ void Drawable::ClearDrawable() {
     if (indices_.size() > 0) { indices_.clear(); }
     if (vertices_.size() > 0) { vertices_.clear(); }
 }
+
+void Drawable::CreateBlankQuad() {
+    ClearDrawable();
+
+    glm::vec3 nor(0, 0, -1);
+    vertices_.push_back(Vertex(glm::vec3(-1, 1, 0), nor, glm::vec2(0, 1)));
+    vertices_.push_back(Vertex(glm::vec3(-1,-1, 0), nor, glm::vec2(0, 0)));
+    vertices_.push_back(Vertex(glm::vec3( 1, 1, 0), nor, glm::vec2(1, 1)));
+            
+    vertices_.push_back(Vertex(glm::vec3( 1,-1, 0), nor, glm::vec2(1, 0)));
+    vertices_.push_back(Vertex(glm::vec3( 1, 1, 0), nor, glm::vec2(1, 1)));
+    vertices_.push_back(Vertex(glm::vec3(-1,-1, 0), nor, glm::vec2(0, 0)));
+
+    for (int i = 0; i < 6; ++i) {
+        indices_.push_back(i);
+    }
+}

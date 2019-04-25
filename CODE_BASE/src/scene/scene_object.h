@@ -14,6 +14,8 @@ protected:
     std::string name_;
     glm::mat4 global_transform_;
 
+    std::vector<glm::mat4> multiple_transforms_;
+
     std::shared_ptr<ShaderProgram> program_ptr_;
     GLuint program_;
 
@@ -26,10 +28,13 @@ public:
     SceneObject();
     SceneObject(
         std::vector<std::shared_ptr<Drawable>>* drawable_components, std::shared_ptr<ShaderProgram> using_program,
-        const string& name, const glm::vec3& pos);
+        const char* name, const glm::vec3& pos);
     SceneObject(
         const char* file_path, Filetype file_type, std::shared_ptr<ShaderProgram> using_program,
-        const string& name, const glm::vec3& pos);
+        const char* name, const glm::vec3& pos);
+    SceneObject(
+        std::shared_ptr<Drawable> drawable_component, std::shared_ptr<ShaderProgram> using_program,
+        const char* name, const glm::vec3& pos);
 	~SceneObject();
 
     glm::vec3 GetGlobalPosition();
@@ -37,7 +42,10 @@ public:
     glm::mat4 GetGlobalTransform();
 
     void SetGlobalTransform(const glm::mat4& transf);
+    void AddGlobalTransform(const glm::mat4& transf);
+
     void SetTexture(GLuint tex_id);
+    void SetTextures(GLuint tex_id1, GLuint tex_id2_opacity);
 
     GLuint Program() { return program_; }
     const GLuint Program() const { return program_; }

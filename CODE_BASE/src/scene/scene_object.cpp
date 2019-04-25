@@ -4,7 +4,7 @@ SceneObject::SceneObject() {}
 
 SceneObject::SceneObject(
     const char* file_path, Filetype file_type, std::shared_ptr<ShaderProgram> using_program,
-    const string& name, const glm::vec3& pos)
+    const char* name, const glm::vec3& pos)
     : drawable_components_(std::vector<std::shared_ptr<Drawable>>()),
       program_ptr_(using_program), program_(using_program->Handle()),
       global_transform_(glm::translate(glm::mat4(1.f), pos)), name_(name) {
@@ -14,10 +14,18 @@ SceneObject::SceneObject(
 
 SceneObject::SceneObject(
     std::vector<std::shared_ptr<Drawable>>* drawable_components, std::shared_ptr<ShaderProgram> using_program,
-    const string& name, const glm::vec3& pos)
+    const char* name, const glm::vec3& pos)
     : drawable_components_(*drawable_components),
       program_ptr_(using_program), program_(using_program->Handle()),
       global_transform_(glm::translate(glm::mat4(1.f), pos)), name_(name)
+{}
+
+SceneObject::SceneObject(
+    std::shared_ptr<Drawable> drawable_component, std::shared_ptr<ShaderProgram> using_program,
+    const char* name, const glm::vec3& pos)
+    : drawable_components_({ drawable_component }),
+    program_ptr_(using_program), program_(using_program->Handle()),
+    global_transform_(glm::translate(glm::mat4(1.f), pos)), name_(name)
 {}
 
 SceneObject::~SceneObject() {
@@ -113,10 +121,18 @@ void SceneObject::Load(const char* file_path, Filetype mesh_file_type) {
 /***********************************************************/
 
 glm::vec3 SceneObject::GetGlobalPosition() {
+    if (multiple_transforms_.size() > 0) {
+        return glm::vec3(0.f);
+    }
+
     return glm::vec3(global_transform_[3]);
 }
 
 glm::mat4 SceneObject::GetGlobalTransf_NoTranslation() {
+    if (multiple_transforms_.size() > 0) {
+        return glm::mat4(1.f);
+    }
+    
     glm::mat4 returning = global_transform_;
     returning[3][0] = 0;
     returning[3][1] = 0;
@@ -125,11 +141,23 @@ glm::mat4 SceneObject::GetGlobalTransf_NoTranslation() {
 }
 
 glm::mat4 SceneObject::GetGlobalTransform() {
+    if (multiple_transforms_.size() > 0) {
+        return glm::mat4(1.f);
+    }
+
     return global_transform_;
 }
 
 void SceneObject::SetGlobalTransform(const glm::mat4& transf) {
+    if (multiple_transforms_.size() > 0) {
+        return;
+    }
+
     global_transform_ = transf;
+}
+
+void SceneObject::AddGlobalTransform(const glm::mat4& transf) {
+    multiple_transforms_.push_back(transf);
 }
 
 /***********************************************************/
@@ -139,6 +167,13 @@ void SceneObject::SetGlobalTransform(const glm::mat4& transf) {
 void SceneObject::SetTexture(GLuint tex_id) {
     for (std::shared_ptr<Drawable> d : this->drawable_components_) {
         d->SetHandleLocation(HandleType::TEX, tex_id);
+    }
+}
+
+void SceneObject::SetTextures(GLuint tex_id1, GLuint tex_id2_opacity) {
+    for (std::shared_ptr<Drawable> d : this->drawable_components_) {
+        d->SetHandleLocation(HandleType::TEX, tex_id1);
+        d->SetHandleLocation(HandleType::TEX2, tex_id2_opacity);
     }
 }
 
@@ -152,12 +187,26 @@ void SceneObject::CreateSelf() {
     }
 }
 void SceneObject::Draw(const glm::mat4 view_proj) {
-    for (std::shared_ptr<Drawable> d : drawable_components_) {
-        program_ptr_->Draw(d, global_transform_, view_proj);
+    if (multiple_transforms_.size() == 0) {
+        for (std::shared_ptr<Drawable> d : drawable_components_) {
+            program_ptr_->Draw(d, global_transform_, view_proj);
+        }
+
+        for (std::shared_ptr<SceneObject> s : attached_components_) {
+            s->Draw(view_proj * global_transform_);
+        }
+
+        return;
     }
 
-    for (std::shared_ptr<SceneObject> s : attached_components_) {
-        s->Draw(view_proj * global_transform_);
+    for (glm::mat4 m : multiple_transforms_) {
+        for (std::shared_ptr<Drawable> d : drawable_components_) {
+            program_ptr_->Draw(d, m, view_proj);
+        }
+
+        for (std::shared_ptr<SceneObject> s : attached_components_) {
+            s->Draw(view_proj * m);
+        }
     }
 }
 

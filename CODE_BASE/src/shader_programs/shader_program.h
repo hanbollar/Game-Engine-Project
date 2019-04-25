@@ -56,13 +56,10 @@ public:
 	static void SetUniformMat4(const glm::mat4 &matrix, const GLuint& handle);
     static void SetUniformSampler(const int& val, const GLuint& handle);
 
-    virtual void Draw(std::shared_ptr<Drawable>& d, const glm::mat4& global_transform, const glm::mat4& view_proj) = 0;
-    //virtual void Draw(shared_ptr<Drawable>& d, const map<string, tuple<GLuint, void*>>& uniform_inputs) = 0;
+    virtual void Draw(std::shared_ptr<Drawable> d, const glm::mat4& global_transform, const glm::mat4& view_proj) = 0;
 
     static GLuint LoadShaderProgramFiles(const char* vertex_file_path, const char* fragment_file_path);
     static GLuint LoadShaderFile(const char* file_path, GLenum shader_type);
-
-    static GLuint RenderToTexture();
 
     static GLuint LoadTextureFromFile(const char* file_path);
     static GLuint LoadDDSTextureFromFile(const char* file_path);

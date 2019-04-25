@@ -2,6 +2,8 @@
 #include "shader_programs/default_program.h"
 #include "shader_programs/simple_program.h"
 
+#include <random>
+
 Scene::Scene()
 	:	WindowMaintainer(),
 		camera_(new Camera()),
@@ -85,31 +87,51 @@ void Scene::StartGame() {
     user_character_->SetTexture(ShaderProgram::LoadTextureFromFile("resources/polka_dots.jpg"));
     user_character_->CreateSelf();
 
-    std::shared_ptr<ShaderProgram> rain_prog = std::shared_ptr<DefaultProgram>(new DefaultProgram(
+    std::shared_ptr<ShaderProgram> rain_prog_ = std::shared_ptr<DefaultProgram>(new DefaultProgram(
         "shader_files/threeD.vertexshader",
         "shader_files/rain.fragmentshader"));
-    rain_prog->SetTimer(timer_);
-    rain_prog->SetResolution(vec2(800, 800));
+    rain_prog_->SetTimer(timer_);
+    rain_prog_->SetResolution(vec2(800, 800));
+
+    blank_quad_ = std::shared_ptr<Drawable>(new Drawable());
+    blank_quad_->CreateBlankQuad();
 
     shared_ptr<SceneObject> random_mesh = shared_ptr<SceneObject>(new SceneObject(
-        "resources/mainchar/walking_char_sequence.dae", Filetype::COLLADA, rain_prog, "random", glm::vec3(1, 1, 0.f)));
+        "resources/mainchar/walking_char_sequence.dae", Filetype::COLLADA, threeD_prog, "random", glm::vec3(1, 1, 0.f)));
     random_mesh->CreateSelf();
     
-    
     shared_ptr<SceneObject> rain_floor = shared_ptr<SceneObject>(new SceneObject(
-        "resources/quad.obj", Filetype::OBJ, rain_prog, "rain floor", glm::vec3(0.f)));
+        blank_quad_, rain_prog_, "rain floor", glm::vec3(0.f)));
     float magnitude = 100.f;
     rain_floor->SetGlobalTransform(
         glm::translate(glm::mat4(1.f), 0.5f * glm::vec3(-magnitude, 0, -magnitude))
         * glm::rotate(glm::scale(glm::mat4(1.f), glm::vec3(magnitude)), float(M_PI/2.f), glm::vec3(1, 0, 0)));
     rain_floor->CreateSelf();
 
+    std::shared_ptr<ShaderProgram> grass_tex_prog = std::shared_ptr<DefaultProgram>(new DefaultProgram(
+        "shader_files/grass_tex.vertexshader",
+        "shader_files/grass_tex.fragmentshader"));
+    shared_ptr<SceneObject> grass = shared_ptr<SceneObject>(new SceneObject(
+        "resources/grass/grass_low_poly.DAE", Filetype::COLLADA, grass_tex_prog, "grass", glm::vec3(0, 0, 2)));
+    grass->SetTextures(ShaderProgram::LoadTextureFromFile("resources/grass/low_poly_grass2_fix.png"),
+                       ShaderProgram::LoadTextureFromFile("resources/grass/low_poly_grass_opacity.png"));
+    grass->CreateSelf();
+
+    /*std::shared_ptr<ShaderProgram> tree_tex_prog = std::shared_ptr<DefaultProgram>(new DefaultProgram(
+        "shader_files/tex.vertexshader",
+        "shader_files/tex.fragmentshader"
+    ));*/
+    /*shared_ptr<SceneObject> tree = shared_ptr<SceneObject>(new SceneObject(
+        "resource/grass/grass_low_poly.DAE", Filetype::COLLADA, threeD_prog, "tree", glm::vec3(0, 0, 1)));
+    tree->SetTextures(ShaderProgram::LoadTextureFromFile("resources/grass/low_poly_grass2_fix.png"),
+        ShaderProgram::LoadTextureFromFile("resources/grass/low_poly_grass_opacity.png"));
+    tree->CreateSelf();*/
+
     // sky
     std::shared_ptr<ShaderProgram> sky_program = std::shared_ptr<SimpleProgram>(new SimpleProgram(
         "shader_files/simple.vertexshader",
         "shader_files/sky.fragmentshader"));
-    sky_quad_ = unique_ptr<SceneObject>(new SceneObject(
-        "resources/quad.obj", Filetype::OBJ, sky_program, "skyquad", glm::vec3(0.f)));
+    sky_quad_ = unique_ptr<SceneObject>(new SceneObject(blank_quad_, sky_program, "skyquad", glm::vec3(0.f)));
     sky_quad_->CreateSelf();
 
     ErrorHandler::PrintGLErrorLog();
@@ -120,10 +142,37 @@ void Scene::StartGame() {
 	generic_scene_objects_.push_back(random_mesh);
     generic_scene_objects_.push_back(rain_floor);
 
+    RandomlyAddToScene(grass, 1000, glm::vec3(0.2), glm::vec3(1.f), glm::ivec3(100, 1, 100), glm::vec3(0));
+    generic_scene_objects_.push_back(grass);
+    RandomlyAddToScene(tree, 100, glm::vec3(1.f), glm::vec3(2.f), glm::ivec3(50, 1, 50), glm::vec3(50));
+    generic_scene_objects_.push_back(tree);
+
     screen_quad_->SetTexture(StartTextures::START_SELECTED);
 
     text_handler_->initText2D(10, 570, 15, "timer", TextId::TIMER);
     text_handler_->initText2D(5, 5, 20, "general info", TextId::GENERALSCREEN);
+}
+
+void Scene::RandomlyAddToScene( std::shared_ptr<SceneObject> scene_obj, const unsigned int& num,
+                                const glm::fvec3& min_scale, const glm::fvec3&max_scale,
+                                const glm::ivec3& rand_dim, const glm::vec3& center) {
+    glm::vec3 z(0, 1, 0);
+    glm::mat4 identity(1.f);
+    glm::mat4 m_max_scale(glm::scale(identity, max_scale));
+    glm::mat4 m_min_scale(glm::scale(identity, min_scale));
+
+    glm::vec3 calc_center = center - glm::vec3(rand_dim / 2);
+
+    for (int i = 0; i < num; ++i) {
+        glm::mat4 trans = glm::translate(
+            identity,
+            calc_center + glm::vec3(rand() % rand_dim.x, rand() % rand_dim.y, rand() % rand_dim.z)
+        );
+        glm::mat4 rot = glm::rotate(identity, float(M_PI) / ((rand() % 180) + 1), z);
+        glm::mat4 scale = LERP(m_min_scale, m_max_scale, rand() / RAND_MAX);
+        glm::mat4 transformation = trans * rot * scale;
+        scene_obj->AddGlobalTransform(transformation);
+    }
 }
 
 void Scene::KeyPressEvent(int key, int scancode, int action, int mods) {

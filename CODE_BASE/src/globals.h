@@ -39,3 +39,8 @@ namespace ErrorHandler {
 	void PrintLinkInfoLog(int prog);
 	void PrintShaderInfoLog(int shader);
 };
+
+template<class T>
+inline T LERP(T a, T b, float lerp_t) {
+    return a * (1 - lerp_t) + b * lerp_t;
+}

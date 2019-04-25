@@ -1,7 +1,7 @@
 #include "my_window.h"
 
 MyWindow::MyWindow(WindowMaintainer* m)
-	: MyWindow(1024, 768, m) {}
+	: MyWindow(SCR_WIDTH, SCR_HEIGHT, m) {}
 
 MyWindow::MyWindow(int w, int h, WindowMaintainer* m)
 	: width(w), height(h), maintainer(m) {

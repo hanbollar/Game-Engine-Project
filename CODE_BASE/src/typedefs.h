@@ -3,13 +3,13 @@
 typedef enum {
 	VAO,
     TEX,
-	// all below handles are generic buffers - update as needed.
-	// if add another item that's not a buffer, add above this block.
+    TEX2,
 	IBO,
 	VBO,
 	EBO,
 	POS,
 	COL,
+    FBO,
 	NOR,
 	UVS,
 

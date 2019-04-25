@@ -9,11 +9,11 @@ public:
     Character();
     Character(
         const char* file_path, Filetype file_type, std::shared_ptr<ShaderProgram> using_program,
-        const string& name, const glm::vec3& pos);
+        const char* name, const glm::vec3& pos);
     Character(
         std::vector<shared_ptr<Drawable>>* body, std::shared_ptr<ShaderProgram> using_program,
-        const string& name, const glm::vec3& pos);
-    Character(const string& name, const glm::vec3& pos);
+        const char* name, const glm::vec3& pos);
+    Character(const char* name, const glm::vec3& pos);
     ~Character();
 
     float moving_magnitude_ = 1;
