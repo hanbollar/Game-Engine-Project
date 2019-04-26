@@ -70,11 +70,20 @@ void Scene::RunLoadingScreen() {
 }
 
 void Scene::SetupCatLocations() {
-    const glm::vec3 MIN_LOC(-80, 0, -80);
-    const glm::vec3 MAX_LOC(80, 0, 80);
-    cat_loc_[0] = LERP(MIN_LOC, MAX_LOC, rand() / RAND_MAX);
-    cat_loc_[1] = LERP(MIN_LOC, MAX_LOC, rand() / RAND_MAX);
-    cat_loc_[2] = LERP(MIN_LOC, MAX_LOC, rand() / RAND_MAX);
+    const glm::vec3 MIN_LOC(-50, 0, -50);
+    const glm::vec3 MAX_LOC(50, 0, 50);
+
+    for (int i = 0; i < NUMCATS; ++i) {
+        cat_loc_[i] = glm::vec3(
+            LERP(MIN_LOC.x, MAX_LOC.x, float(rand()) / RAND_MAX),
+            LERP(MIN_LOC.y, MAX_LOC.y, float(rand()) / RAND_MAX),
+            LERP(MIN_LOC.z, MAX_LOC.z, float(rand()) / RAND_MAX));
+
+        ErrorHandler::ShowError("cat" + to_string(i) + ": "
+            + to_string(cat_loc_[0].x) + ", "
+            + to_string(cat_loc_[0].y) + ", "
+            + to_string(cat_loc_[0].z));
+    }
 }
 
 void Scene::StartGame() {
@@ -96,16 +105,25 @@ void Scene::StartGame() {
         "shader_files/tex.vertexshader",
         "shader_files/tex.fragmentshader"));
 
-    
+    cat_character_ = std::shared_ptr<Character>(new Character(
+        "resources/real_cat/cat.obj", Filetype::OBJ, threeD_prog, "real cat", glm::vec3(0.f)
+    ));
+    cat_character_->CreateSelf();
+
+    fake_cat_character_ = std::shared_ptr<Character>(new Character(
+        "resources/real_cat/cat.obj", Filetype::OBJ, threeD_prog, "fake cat", glm::vec3(0.f)));
+    //fake_cat_character_->SetTexture(ShaderProgram::LoadDDSTextureFromFile("resources/simple_cat/cat_01_color05.tga"));
+    fake_cat_character_->CreateSelf();
 
     // SceneObjects
-    std::shared_ptr<SceneObject> random_mesh = shared_ptr<SceneObject>(new SceneObject(
+    random_mesh = shared_ptr<SceneObject>(new SceneObject(
         "resources/quad.obj", Filetype::OBJ, general_tex_prog, "random", glm::vec3(0.f)));
     random_mesh->SetTexture(ShaderProgram::LoadTextureFromFile("resources/polka_dots.jpg"));
     random_mesh->CreateSelf();
-    random_mesh->AddGlobalTransform(glm::translate(glm::mat4(1.f), cat_loc_[0]));
-    random_mesh->AddGlobalTransform(glm::translate(glm::mat4(1.f), cat_loc_[1]));
-    random_mesh->AddGlobalTransform(glm::translate(glm::mat4(1.f), cat_loc_[2]));
+    random_mesh->SetDrawMode(GL_TRIANGLE_STRIP);
+    //random_mesh->AddGlobalTransform(glm::translate(glm::mat4(1.f), cat_loc_[0]));
+    //random_mesh->AddGlobalTransform(glm::translate(glm::mat4(1.f), cat_loc_[1]));
+    //random_mesh->AddGlobalTransform(glm::translate(glm::mat4(1.f), cat_loc_[2]));
 
     std::shared_ptr<ShaderProgram> rain_prog_ = std::shared_ptr<DefaultProgram>(new DefaultProgram(
         "shader_files/threeD.vertexshader",
@@ -122,8 +140,7 @@ void Scene::StartGame() {
         blank_quad_, rain_prog_, "rain floor", glm::vec3(0.f)));
     float magnitude = 100.f;
     rain_floor->SetGlobalTransform(
-        glm::translate(glm::mat4(1.f), 0.5f * glm::vec3(-magnitude, 0, -magnitude))
-        * glm::rotate(glm::scale(glm::mat4(1.f), glm::vec3(magnitude)), float(M_PI/2.f), glm::vec3(1, 0, 0)));
+        glm::rotate(glm::scale(glm::mat4(1.f), glm::vec3(magnitude)), float(M_PI/2.f), glm::vec3(1, 0, 0)));
     rain_floor->CreateSelf();
 
     shared_ptr<SceneObject> tree = shared_ptr<SceneObject>(new SceneObject(
@@ -152,7 +169,7 @@ void Scene::StartGame() {
 
     // adding in scene objects that are opaque
     scene_characters_.push_back(user_character_);
-	generic_scene_objects_.push_back(random_mesh);
+	
     generic_scene_objects_.push_back(rain_floor);
     RandomlyAddTransformations(tree, 10, glm::vec3(.5, .5, .5), glm::vec3(1.5, 2, 1.5), glm::ivec3(50, 1, 50), glm::vec3(10, 1, 10));
     generic_scene_objects_.push_back(tree);
@@ -209,9 +226,8 @@ void Scene::ControllerEvents(const unsigned char *button_events, const float *ax
                 on_scene_ = SceneList::MAINGAME;
                 if (!game_started_) {
                     audio_handler_->StartPlayingSound(AudioChoices::CAT1, AudioChoices::GENERAL);
-                    audio_handler_->PauseSound();
-                    audio_handler_->Set3D(false);
-                    audio_handler_->UnpauseSound();
+                    audio_handler_->SetAudioSourcePos(cat_loc_[on_cat_]);
+                    audio_handler_->SwitchToStored2DSound();
                     playing_ = true;
                     game_started_ = true;
                 }
@@ -233,6 +249,14 @@ void Scene::ControllerEvents(const unsigned char *button_events, const float *ax
         break;
     case SceneList::CREDITS:
         if (button_events[JoystickButtons::B] == GLFW_PRESS) {
+            if (game_started_ && !playing_) {
+                // finished the game and these were the end credits
+                ErrorHandler::ShowError("Closing Window. Game Finished.");
+                CloseWindow();
+                return;
+            }
+
+            // otherwise this is first time starting the game on title screen
             on_scene_ = SceneList::START;
             on_selected_ = StartTextures::START_SELECTED;
         }
@@ -254,6 +278,21 @@ void Scene::ControllerEvents(const unsigned char *button_events, const float *ax
         break;
     case SceneList::MAINGAME:
         if (button_events[JoystickButtons::A] == GLFW_PRESS) {
+            if (cat_in_min_dist_) {
+                if (on_cat_ != NUMCATS-1) {
+                    text_handler_->writeToText2D("HMM THAT DOESNT SEEM TO BE MY CAT", TextId::GENERALSCREEN);
+                    on_cat_++;
+                    cat_in_min_dist_ = false;
+                    cat_in_sound_dist_ = false;
+                    audio_handler_->SetAudioSourcePos(cat_loc_[on_cat_]);
+                    audio_handler_->SwitchToStored2DSound();
+                } else if (on_cat_ == NUMCATS-1) {
+                    text_handler_->writeToText2D("YOU DID IT!!", TextId::GENERALSCREEN);
+                    on_scene_ = SceneList::CREDITS;
+                    playing_ = false;
+                    audio_handler_->StopPlayingSound();
+                }
+            }
             user_character_->Jump(camera_);
         }
         if (button_events[JoystickButtons::B] == GLFW_PRESS) {
@@ -311,22 +350,33 @@ void Scene::ControllerEvents(const unsigned char *button_events, const float *ax
     }
 }
 
+void Scene::CloseWindow() {
+    window_still_running_ = false;
+}
+
 void Scene::HandleCatLocationCheck() {
-    // TODO FINISH HERE ---------------------------------------------------------------
-    if (glm::distance(user_character_->GetGlobalPosition(), cat_loc_[on_cat_]) < CAT_ALMOST_FOUND_MIN_DIST_) {
+
+    float dist = glm::distance(user_character_->GetGlobalPosition(), cat_loc_[on_cat_]);
+
+    if (dist > CAT_TOO_FAR_DIST_) {
+        //text_handler_->writeToText2D("YOU'RE TOO FAR! TURN BACK!", TextId::GENERALSCREEN);
+        return;
+    }
+
+    if (dist < CAT_ALMOST_FOUND_MIN_DIST_) {
         if (cat_in_min_dist_) {
             // still valid
         } else {
             // just started beind valid
             cat_in_min_dist_ = true;
-            text_handler_->writeToText2D("YOU'RE ALMOST THERE! PRESS A WHEN YOU SEE THE CAT!", TextId::GENERALSCREEN);
+            text_handler_->writeToText2D("PRESS A WHEN YOU SEE THE CAT!", TextId::GENERALSCREEN);
         }
     } else {
         // not valid
         cat_in_min_dist_ = false;
     }
     
-    if (glm::distance(user_character_->GetGlobalPosition(), cat_loc_[on_cat_]) < CAT_SOUND_MIN_DIST_) {
+    if (dist < CAT_SOUND_MIN_DIST_) {
         if (cat_in_sound_dist_) {
             // still valid
             if (!cat_in_min_dist_) {
@@ -334,46 +384,31 @@ void Scene::HandleCatLocationCheck() {
             }
         } else {
             // just started being valid
-            //audio_handler_->StopPlayingSound();
+            audio_handler_->SwitchToStored3DSound();
 
-            audio_handler_->PauseSound();
-            audio_handler_->Set3D(true);
-            audio_handler_->UnpauseSound();
-
-            /*audio_handler_->Set3D(true);
-            audio_handler_->SetAudioFile(AudioChoices(AudioChoices::CAT1 + on_cat_));
-            audio_handler_->SetAudioSourcePos(cat_loc_[on_cat_]);
-            audio_handler_->StartPlayingSound();*/
             cat_in_sound_dist_ = true;
         }
     } else {
         // not valid
         if (cat_in_sound_dist_) {
             // just stopped being valid
-            text_handler_->writeToText2D("MAIN GAME", TextId::GENERALSCREEN);
-
-            audio_handler_->PauseSound();
-            audio_handler_->Set3D(false);
-            audio_handler_->UnpauseSound();
-
-            /*
-            audio_handler_->StopPlayingSound();
-            audio_handler_->Set3D(false);
-            audio_handler_->SetAudioFile(AudioChoices::GENERAL);
-            audio_handler_->StartPlayingSound();*/
-
+            audio_handler_->SwitchToStored2DSound();
+            
             cat_in_sound_dist_ = false;
         }
+        text_handler_->writeToText2D("", TextId::GENERALSCREEN);
     }
 }
 
 void Scene::Update() {
     if (playing_) {
         HandleCatLocationCheck();
-        
         audio_handler_->Update(user_character_->GetGlobalPosition());
+
         timer_->Tick();
     }
+
+    glm::mat4 vproj = this->ViewProjection();
 
     switch (on_scene_)
     {
@@ -385,16 +420,27 @@ void Scene::Update() {
 
         // main scene attributes
         for (auto& so : generic_scene_objects_) {
-            so->Draw(this->ViewProjection());
+            so->Draw(vproj);
         }
         for (auto& c : scene_characters_) {
-            c->Draw(this->ViewProjection());
+            c->Draw(vproj);
+        }
+
+        if (cat_in_min_dist_) {
+            /*if (on_cat_ == 3) {
+                cat_character_->SetGlobalTransform(glm::translate(glm::mat4(1.f), cat_loc_[on_cat_]));
+                cat_character_->Draw(vproj);
+            } else {
+                fake_cat_character_->SetGlobalTransform(glm::translate(glm::mat4(1.f), cat_loc_[on_cat_]));
+                fake_cat_character_->Draw(vproj);
+            }*/
+            random_mesh->SetGlobalTransform(glm::translate(glm::mat4(1.f), cat_loc_[on_cat_]));
+            random_mesh->Draw(vproj);
         }
 
         // text overlay on screen
         glDisable(GL_DEPTH_TEST);
         text_handler_->writeToText2D(std::to_string(timer_->GetTime()), TextId::TIMER);
-        
 
         text_handler_->Draw();
         glEnable(GL_DEPTH_TEST);

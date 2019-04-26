@@ -1,8 +1,6 @@
 #pragma once
 
 #include "globals.h"
-//#include "drawable.h"
-//#include "shaderProgram.h"
 
 // SHELL CLASS - class responsible for all items on the window's screen
 class WindowMaintainer {
@@ -11,6 +9,8 @@ protected:
 	WindowMaintainer() {}
 	~WindowMaintainer() {}
 
+    bool window_still_running_ = true;
+
 public:
 	virtual void Update() = 0;
 	virtual void KeyPressEvent(int key, int scancode, int action, int mods) = 0;
@@ -18,5 +18,7 @@ public:
 	virtual void RunWithDefaultSetup() = 0;
     virtual const glm::mat4& ViewProjection() const = 0;
     virtual glm::mat4 ViewProjection() = 0;
-	//virtual void updateRequiredItems(ShaderProgram*) = 0; 	// update function for if any items need to be reloaded, for ex, camera transf matrix
+
+    virtual void CloseWindow() { window_still_running_ = false; }
+    virtual bool Running() { return window_still_running_; }
 };

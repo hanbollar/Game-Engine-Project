@@ -125,7 +125,6 @@ void MyWindow::initWindow() {
 	// connection between mainWindow and event functions
 	glfwSetKeyCallback(the_window, key_event_callback);
 	glfwSetFramebufferSizeCallback(the_window, framebuffer_size_callback);
-    //glfwSetJoystickCallback()
 
 	// any errors in GL initialization?
 	ErrorHandler::OpenGLCheck();
@@ -152,6 +151,9 @@ void MyWindow::run() {
         }
 
 		maintainer->Update();
+        if (!maintainer->Running()) {
+            glfwSetWindowShouldClose(the_window, GL_TRUE);
+        }
 
 		glfwSwapBuffers(the_window);
 		glfwPollEvents();

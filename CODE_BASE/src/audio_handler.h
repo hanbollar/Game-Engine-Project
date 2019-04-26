@@ -37,6 +37,9 @@ public:
     void StopPlayingSound();
     void Update(const glm::vec3& listener_position);
 
+    void SwitchToStored3DSound();
+    void SwitchToStored2DSound();
+
     void SetAudioSourcePos(const glm::vec3& source_position);
     void SetMinDistance(const float& min_dist);
     void SetAudioFile(AudioChoices choice);

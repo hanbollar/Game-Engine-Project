@@ -47,11 +47,17 @@ private:
     void SetupCatLocations();
     void HandleCatLocationCheck();
     int on_cat_ = 0;
+    const int NUMCATS = 3;
     glm::vec3 cat_loc_[3];
     bool cat_in_sound_dist_ = false;
     bool cat_in_min_dist_ = false;
     const float CAT_SOUND_MIN_DIST_ = 45.f;
     const float CAT_ALMOST_FOUND_MIN_DIST_ = 20.f;
+    const float CAT_TOO_FAR_DIST_ = 60.f;
+    std::shared_ptr<Character> cat_character_ = nullptr;
+    std::shared_ptr<Character> fake_cat_character_ = nullptr;
+
+    shared_ptr<SceneObject> random_mesh = nullptr; // kept here for testing // TODO: remove when complete
 
 public:
 	Scene();
@@ -62,6 +68,7 @@ public:
 	virtual void KeyPressEvent(int key, int scancode, int action, int mods);
     virtual void ControllerEvents(const unsigned char *button_events, const float *axes);
 	virtual void RunWithDefaultSetup();
+    virtual void CloseWindow();
 
     void RunLoadingScreen();
     void StartGame();

@@ -66,6 +66,18 @@ void AudioHandler::StopPlayingSound() {
     engine_->drop();
 }
 
+void AudioHandler::SwitchToStored3DSound() {
+    PauseSound();
+    Set3D(true);
+    UnpauseSound();
+}
+
+void AudioHandler::SwitchToStored2DSound() {
+    PauseSound();
+    Set3D(false);
+    UnpauseSound();
+}
+
 void AudioHandler::Update(const glm::vec3& listener_pos) {
     if (!playing_) {
         return;
