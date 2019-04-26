@@ -48,6 +48,8 @@ private:
 
     shared_ptr<Drawable> blank_quad_ = nullptr;
 
+    void HandleTimeBasedMovement();
+
     void SetupCatLocations();
     void HandleCatLocationCheck();
     int on_cat_ = 0;
@@ -61,6 +63,7 @@ private:
     std::shared_ptr<Character> cat_character_ = nullptr;
     std::shared_ptr<Character> fake_cat_character_ = nullptr;
 
+    std::shared_ptr<SceneObject> staff = nullptr; // kept here for testing // to be removed later when timebased is more optimized
     shared_ptr<SceneObject> random_mesh = nullptr; // kept here for testing // TODO: remove when complete
 
 public:

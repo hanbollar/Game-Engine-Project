@@ -82,9 +82,9 @@ void Scene::SetupCatLocations() {
             LERP(MIN_LOC.z, MAX_LOC.z, float(rand()) / RAND_MAX));
 
         ErrorHandler::ShowError("cat" + to_string(i) + ": "
-            + to_string(cat_loc_[0].x) + ", "
-            + to_string(cat_loc_[0].y) + ", "
-            + to_string(cat_loc_[0].z));
+            + to_string(cat_loc_[i].x) + ", "
+            + to_string(cat_loc_[i].y) + ", "
+            + to_string(cat_loc_[i].z));
     }
 }
 
@@ -119,7 +119,6 @@ void Scene::StartGame() {
     //fake_cat_character_->SetTexture(ShaderProgram::LoadTextureFromFile("resources/simple_cat/cat_01_color05.tga"));
     fake_cat_character_->CreateSelf();
 
-    // SceneObjects
     random_mesh = shared_ptr<SceneObject>(new SceneObject(
         "resources/quad.obj", Filetype::OBJ, general_tex_prog, "random", glm::vec3(0.f)));
     random_mesh->SetTexture(ShaderProgram::LoadTextureFromFile("resources/polka_dots.jpg"));
@@ -129,6 +128,13 @@ void Scene::StartGame() {
     //random_mesh->AddGlobalTransform(glm::translate(glm::mat4(1.f), cat_loc_[0]));
     //random_mesh->AddGlobalTransform(glm::translate(glm::mat4(1.f), cat_loc_[1]));
     //random_mesh->AddGlobalTransform(glm::translate(glm::mat4(1.f), cat_loc_[2]));
+
+    staff = shared_ptr<SceneObject>(new SceneObject(
+        "resources/quad.obj", Filetype::OBJ, general_tex_prog, "random", glm::vec3(0.f)));
+    staff->SetTexture(ShaderProgram::LoadTextureFromFile("resources/polka_dots.jpg"));
+    staff->SetGlobalTransform(glm::translate(glm::scale(glm::mat4(1.f), 6.f*glm::vec3(.2, 2, .2)), glm::vec3(0, -1, -4.5)));
+    staff->CreateSelf();
+    staff->SetDrawMode(GL_TRIANGLE_STRIP);
 
     std::shared_ptr<ShaderProgram> rain_prog_ = std::shared_ptr<DefaultProgram>(new DefaultProgram(
         "shader_files/threeD.vertexshader",
@@ -170,7 +176,9 @@ void Scene::StartGame() {
 
     ErrorHandler::PrintGLErrorLog();
 
-    //user_character_->Attach(staff, ); // TODO:: DEMO ATTACHING FEATURE (just add to sub objects for the sceneobject)
+    /******** CONNECTING OBJECTS AND THEIR SUBS ******/
+
+    user_character_->attached_components_.push_back(staff);
 
 
     /******** SETTING UP FOR COLLISION CHECKS ******/
@@ -204,6 +212,7 @@ void Scene::StartGame() {
     generic_scene_objects_.push_back(rain_floor);
     RandomlyAddTransformations(tree, 10, glm::vec3(.5, .5, .5), glm::vec3(1.5, 2, 1.5), glm::ivec3(50, 1, 50), glm::vec3(10, 1, 10));
     generic_scene_objects_.push_back(tree);
+    //generic_scene_objects_.push_back(staff);
 
     // adding in collision object visuals
     generic_scene_objects_.push_back(collision_cubes);
@@ -448,10 +457,26 @@ void Scene::HandleCatLocationCheck() {
     }
 }
 
+void Scene::HandleTimeBasedMovement() {
+    // Staff Update
+    // right now hard-coded but for future can do this through a function pointer for every
+    // scene object attached to a specific scene object (and iterate recursively that way)
+    glm::mat4 base_transf = glm::translate(glm::scale(glm::mat4(1.f), 6.f*glm::vec3(.2, 2, .2)), glm::vec3(0, -1, -4.5)); 
+    glm::mat4 rotate_to_side_transf = glm::rotate(glm::mat4(1.f), float(M_PI / 2), glm::vec3(0, 1, 0));
+        
+    float y_loc = std::fabs(glm::cos(timer_->GetTime() * M_PI / 16));
+    glm::mat4 time_transf = glm::translate(rotate_to_side_transf * base_transf, glm::vec3(0, .75*y_loc, 0));
+    staff->SetGlobalTransform(time_transf);
+
+    // IK Update based on staff
+}
+
 void Scene::Update() {
     if (playing_) {
         HandleCatLocationCheck();
         audio_handler_->Update(user_character_->GetGlobalPosition());
+
+        HandleTimeBasedMovement();
 
         timer_->Tick();
     }
