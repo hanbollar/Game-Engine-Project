@@ -56,6 +56,6 @@ public:
     void CreateSelf();
     void Draw(const glm::mat4 view_proj = glm::mat4(1.f));
 
-    virtual void MoveInDirection(std::shared_ptr<Camera>& camera, const glm::vec3& offset);
+    virtual glm::vec3 MoveInDirection(std::shared_ptr<Camera>& camera, const glm::vec3& offset);
     virtual void TurnInDirection(bool positive);
 };

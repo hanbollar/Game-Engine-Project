@@ -11,6 +11,7 @@ Scene::Scene()
         scene_characters_(vector<shared_ptr<Character>>()),
         audio_handler_(new AudioHandler()),
         text_handler_(new TextHandler()),
+        collision_handler_(new CollisionHandler()),
         timer_(shared_ptr<Timer>(new Timer())),
         on_selected_(0)
 {}
@@ -22,6 +23,7 @@ Scene::Scene(Scene& s)
         scene_characters_(s.scene_characters_),
         audio_handler_(std::move(s.audio_handler_)),
         text_handler_(s.text_handler_),
+        collision_handler_(std::move(s.collision_handler_)),
         timer_(s.timer_),
         on_selected_(s.on_selected_)
 {}
@@ -90,12 +92,14 @@ void Scene::StartGame() {
     camera_->eye = glm::vec3(10, 10, 10);
     SetupCatLocations();
 
-    // filling in base screen info
+    /********* FILLING IN BASE SCREEN INFO *******/
     selected_[StartTextures::START_SELECTED] = ShaderProgram::LoadTextureFromFile("resources/Start/1.jpg");
     selected_[StartTextures::CREDITS_SELECTED] = ShaderProgram::LoadTextureFromFile("resources/Start/2.jpg");
     selected_[StartTextures::CONTROLS_SELECTED] = ShaderProgram::LoadTextureFromFile("resources/Start/3.jpg");
     selected_[StartTextures::ON_CREDITS] = ShaderProgram::LoadTextureFromFile("resources/Start/Credits.jpg");
     selected_[StartTextures::ON_CONTROLS] = ShaderProgram::LoadTextureFromFile("resources/Start/base.jpg");
+
+    /********* BUILDING MAIN SCENE SECTION *******/
 
     std::shared_ptr<ShaderProgram> threeD_prog = std::shared_ptr<DefaultProgram>(new DefaultProgram(
         "shader_files/threeD.vertexshader",
@@ -112,7 +116,7 @@ void Scene::StartGame() {
 
     fake_cat_character_ = std::shared_ptr<Character>(new Character(
         "resources/real_cat/cat.obj", Filetype::OBJ, threeD_prog, "fake cat", glm::vec3(0.f)));
-    //fake_cat_character_->SetTexture(ShaderProgram::LoadDDSTextureFromFile("resources/simple_cat/cat_01_color05.tga"));
+    //fake_cat_character_->SetTexture(ShaderProgram::LoadTextureFromFile("resources/simple_cat/cat_01_color05.tga"));
     fake_cat_character_->CreateSelf();
 
     // SceneObjects
@@ -121,6 +125,7 @@ void Scene::StartGame() {
     random_mesh->SetTexture(ShaderProgram::LoadTextureFromFile("resources/polka_dots.jpg"));
     random_mesh->CreateSelf();
     random_mesh->SetDrawMode(GL_TRIANGLE_STRIP);
+    // for testing:
     //random_mesh->AddGlobalTransform(glm::translate(glm::mat4(1.f), cat_loc_[0]));
     //random_mesh->AddGlobalTransform(glm::translate(glm::mat4(1.f), cat_loc_[1]));
     //random_mesh->AddGlobalTransform(glm::translate(glm::mat4(1.f), cat_loc_[2]));
@@ -165,7 +170,33 @@ void Scene::StartGame() {
 
     ErrorHandler::PrintGLErrorLog();
 
-    //user_character_->Attach(staff, ); // TODO:: ADD ATTACHING FEATURE (just add to sub objects for the sceneobject)
+    //user_character_->Attach(staff, ); // TODO:: DEMO ATTACHING FEATURE (just add to sub objects for the sceneobject)
+
+
+    /******** SETTING UP FOR COLLISION CHECKS ******/
+
+    glm::mat4 transf_1 = glm::translate(glm::mat4(1.f), glm::vec3(-5, 0, -7));
+    glm::mat4 transf_2 = glm::translate(glm::mat4(1.f), glm::vec3(5, 0, 5));
+    std::vector<Primitive*> prims = {
+        new Primitive(transf_1, ShapeType::CUBE),
+        new Primitive(transf_2, ShapeType::CUBE) };
+
+    collision_handler_->Build(prims);
+
+    // for visualizing the collisions for now
+    std::shared_ptr<ShaderProgram> collis_prog = std::shared_ptr<ShaderProgram>(new DefaultProgram(
+        "shader_files/threeD.vertexshader",
+        "shader_files/threeD_collis.fragmentshader"
+    ));
+    std::shared_ptr<SceneObject> collision_cubes = std::shared_ptr<SceneObject>(new SceneObject(
+        "resources/dodecahedron.obj", Filetype::OBJ, collis_prog, "collision", glm::vec3(0)
+    ));
+    collision_cubes->CreateSelf();
+    collision_cubes->SetDrawMode(GL_TRIANGLE_STRIP);
+    collision_cubes->AddGlobalTransform(transf_1);
+    collision_cubes->AddGlobalTransform(transf_2);
+
+    /****** ADDING AS RENDERABLES *******/
 
     // adding in scene objects that are opaque
     scene_characters_.push_back(user_character_);
@@ -173,14 +204,22 @@ void Scene::StartGame() {
     generic_scene_objects_.push_back(rain_floor);
     RandomlyAddTransformations(tree, 10, glm::vec3(.5, .5, .5), glm::vec3(1.5, 2, 1.5), glm::ivec3(50, 1, 50), glm::vec3(10, 1, 10));
     generic_scene_objects_.push_back(tree);
+
+    // adding in collision object visuals
+    generic_scene_objects_.push_back(collision_cubes);
+
     // adding in scene objects that have opacity
     RandomlyAddTransformations(grass, 500, glm::vec3(0.2), glm::vec3(1.f), glm::ivec3(100, 1, 100), glm::vec3(0));
     generic_scene_objects_.push_back(grass);
+
+    /****** SETTING UP SCREEN TEXT *******/
 
     screen_quad_->SetTexture(StartTextures::START_SELECTED);
 
     text_handler_->initText2D(10, 570, 15, "timer", TextId::TIMER);
     text_handler_->initText2D(5, 5, 20, "general info", TextId::GENERALSCREEN);
+
+
 }
 
 void Scene::RandomlyAddTransformations( std::shared_ptr<SceneObject> scene_obj, const unsigned int& num,
@@ -244,7 +283,6 @@ void Scene::ControllerEvents(const unsigned char *button_events, const float *ax
             on_selected_ += glm::sign(axes_events[JoystickAxes::MOVE_Y]) * 1;
             on_selected_ = glm::clamp(on_selected_, 1 * StartTextures::START_SELECTED, 1 * StartTextures::CONTROLS_SELECTED);
         }
-        
 
         break;
     case SceneList::CREDITS:
@@ -260,7 +298,7 @@ void Scene::ControllerEvents(const unsigned char *button_events, const float *ax
             on_scene_ = SceneList::START;
             on_selected_ = StartTextures::START_SELECTED;
         }
-        
+
         break;
     case SceneList::CONTROLS:
         if (button_events[JoystickButtons::B] == GLFW_PRESS) {
@@ -269,7 +307,8 @@ void Scene::ControllerEvents(const unsigned char *button_events, const float *ax
                 timer_->Play();
                 text_handler_->writeToText2D("MAIN GAME", TextId::GENERALSCREEN);
                 playing_ = true;
-            } else {
+            }
+            else {
                 on_scene_ = SceneList::START;
                 on_selected_ = StartTextures::START_SELECTED;
             }
@@ -279,14 +318,15 @@ void Scene::ControllerEvents(const unsigned char *button_events, const float *ax
     case SceneList::MAINGAME:
         if (button_events[JoystickButtons::A] == GLFW_PRESS) {
             if (cat_in_min_dist_) {
-                if (on_cat_ != NUMCATS-1) {
+                if (on_cat_ != NUMCATS - 1) {
                     text_handler_->writeToText2D("HMM THAT DOESNT SEEM TO BE MY CAT", TextId::GENERALSCREEN);
                     on_cat_++;
                     cat_in_min_dist_ = false;
                     cat_in_sound_dist_ = false;
                     audio_handler_->SetAudioSourcePos(cat_loc_[on_cat_]);
                     audio_handler_->SwitchToStored2DSound();
-                } else if (on_cat_ == NUMCATS-1) {
+                }
+                else if (on_cat_ == NUMCATS - 1) {
                     text_handler_->writeToText2D("YOU DID IT!!", TextId::GENERALSCREEN);
                     on_scene_ = SceneList::CREDITS;
                     playing_ = false;
@@ -315,14 +355,24 @@ void Scene::ControllerEvents(const unsigned char *button_events, const float *ax
 
         if (axes_events[JoystickAxes::MOVE_X] == -1) {
             user_character_->TurnInDirection(true);
-        } else if (axes_events[JoystickAxes::MOVE_X] == 1) {
+        }
+        else if (axes_events[JoystickAxes::MOVE_X] == 1) {
             user_character_->TurnInDirection(false);
         }
 
         if (axes_events[JoystickAxes::MOVE_Y] == 1) {
-            user_character_->MoveInDirection(camera_, glm::vec3(0, 0, -1));
+            if (collision_handler_->TestLoc(user_character_->MoveInDirection(camera_, glm::vec3(0, 0, -1)))) {
+                // do nothing
+            } else {
+                //user_character_->MoveInDirection(camera_, glm::vec3(0, 0, 1)); // COLLISION CHECKS DONT WORK ATM
+            }
         } else if (axes_events[JoystickAxes::MOVE_Y] == -1) {
-            user_character_->MoveInDirection(camera_, glm::vec3(0, 0, 1));
+            if (collision_handler_->TestLoc(user_character_->MoveInDirection(camera_, glm::vec3(0, 0, 1)))) {
+                // do nothing
+            } else {
+                // move back
+                //user_character_->MoveInDirection(camera_, glm::vec3(0, 0, -1)); // COLLISION CHECKS DONT WORK ATM
+            }
         }
 
         if (axes_events[JoystickAxes::CAMROT_Y] == -1) {
@@ -385,7 +435,6 @@ void Scene::HandleCatLocationCheck() {
         } else {
             // just started being valid
             audio_handler_->SwitchToStored3DSound();
-
             cat_in_sound_dist_ = true;
         }
     } else {
@@ -393,7 +442,6 @@ void Scene::HandleCatLocationCheck() {
         if (cat_in_sound_dist_) {
             // just stopped being valid
             audio_handler_->SwitchToStored2DSound();
-            
             cat_in_sound_dist_ = false;
         }
         text_handler_->writeToText2D("", TextId::GENERALSCREEN);

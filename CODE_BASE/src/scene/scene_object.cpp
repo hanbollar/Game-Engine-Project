@@ -229,7 +229,7 @@ void SceneObject::Draw(const glm::mat4 view_proj) {
     }
 }
 
-void SceneObject::MoveInDirection(std::shared_ptr<Camera>& camera, const glm::vec3& offset) {
+glm::vec3 SceneObject::MoveInDirection(std::shared_ptr<Camera>& camera, const glm::vec3& offset) {
     glm::mat4 transformation = global_transform_;
     glm::vec3 scale;
     glm::quat rotation;
@@ -250,6 +250,8 @@ void SceneObject::MoveInDirection(std::shared_ptr<Camera>& camera, const glm::ve
 
         camera->RecomputeAttributes();
     }
+
+    return glm::vec3(global_transform_ * glm::vec4(0, 0, 0, 1));
 }
 
 void SceneObject::TurnInDirection(bool positive) {

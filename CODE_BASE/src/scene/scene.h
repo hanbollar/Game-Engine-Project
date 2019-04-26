@@ -9,14 +9,18 @@
 #include "timer.h"
 #include "audio_handler.h"
 #include "text_handler.h"
+#include "collision_handler.h"
 
 class Scene : public WindowMaintainer {
 private:
     shared_ptr<Timer> timer_;
 
 	shared_ptr<Camera> camera_;
+
+    // Handlers;
     unique_ptr<AudioHandler> audio_handler_;
     shared_ptr<TextHandler> text_handler_;
+    unique_ptr<CollisionHandler> collision_handler_;
 
     //shared_ptr<DefaultProgram> rain_prog_; // TODO: need a better way to interface with this...
 

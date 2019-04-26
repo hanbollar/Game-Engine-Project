@@ -89,3 +89,11 @@ typedef enum {
 
     NUM_TEXTIDS
 } TextId;
+
+typedef enum {
+    SPHERE,
+    CUBE,
+    CYLINDER,
+
+    NUM_SHAPES
+} ShapeType;

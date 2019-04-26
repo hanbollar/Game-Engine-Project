@@ -45,6 +45,7 @@ public:
 	void RotateTheta(float deg);
 	void RotatePhi(float deg);
 
+    // Adding to maintain view by character!!!!
     void RotateHorizontallyAboutPoint(float deg);
     void RotateVerticallyAboutPoint(float deg);
 

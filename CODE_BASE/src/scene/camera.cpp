@@ -94,6 +94,7 @@ void Camera::RotateAboutRight(float deg) {
 	RecomputeAttributes();
 }
 
+// Adding to maintain view by character
 void Camera::RotateHorizontallyAboutPoint(float deg) {
     glm::mat4 rotation = glm::rotate(glm::mat4(1.f), deg, world_up);
     eye -= ref;
@@ -103,6 +104,7 @@ void Camera::RotateHorizontallyAboutPoint(float deg) {
     RecomputeAttributes();
 }
 
+// Adding to maintain view by character
 void Camera::RotateVerticallyAboutPoint(float deg) {
     glm::mat4 rotation = glm::rotate(glm::mat4(1.f), deg, right);
     glm::vec3 temp_eye = eye - ref;
@@ -174,11 +176,5 @@ void Camera::TranslateAlongUp(float amt) {
 	glm::vec3 translation = up * amt;
 	eye += translation;
 	ref += translation;
-	RecomputeAttributes();
-}
-
-void Camera::Zoom(float amt) {
-	glm::vec3 translation = look * amt;
-	eye += translation;
 	RecomputeAttributes();
 }
