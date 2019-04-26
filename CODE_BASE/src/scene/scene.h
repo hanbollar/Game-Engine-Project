@@ -15,7 +15,7 @@ private:
     shared_ptr<Timer> timer_;
 
 	shared_ptr<Camera> camera_;
-    shared_ptr<AudioHandler> audio_handler_;
+    unique_ptr<AudioHandler> audio_handler_;
     shared_ptr<TextHandler> text_handler_;
 
     //shared_ptr<DefaultProgram> rain_prog_; // TODO: need a better way to interface with this...
@@ -50,8 +50,8 @@ private:
     glm::vec3 cat_loc_[3];
     bool cat_in_sound_dist_ = false;
     bool cat_in_min_dist_ = false;
-    const float CAT_SOUND_MIN_DIST_ = 20.f;
-    const float CAT_ALMOST_FOUND_MIN_DIST_ = 2.f;
+    const float CAT_SOUND_MIN_DIST_ = 45.f;
+    const float CAT_ALMOST_FOUND_MIN_DIST_ = 20.f;
 
 public:
 	Scene();
@@ -66,7 +66,7 @@ public:
     void RunLoadingScreen();
     void StartGame();
     
-    void RandomlyAddToScene(
+    void RandomlyAddTransformations(
         std::shared_ptr<SceneObject> scene_obj, const unsigned int& num, 
         const glm::fvec3& min_scale, const glm::fvec3&max_scale,
         const glm::ivec3& rand_dim, const glm::vec3& center);

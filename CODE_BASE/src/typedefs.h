@@ -65,7 +65,10 @@ typedef enum {
 
 typedef enum {
     BELL = 0,
-    STARTSCREEN = 1,
+    GENERAL = 1,
+    CAT1,
+    CAT2,
+    CAT3,
 
     NUMAUDIOS
 } AudioChoices;

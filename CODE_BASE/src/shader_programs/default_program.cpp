@@ -138,10 +138,10 @@ void DefaultProgram::Draw(shared_ptr<Drawable> d, const glm::mat4& global_transf
     if (allow_opacity) {
         glEnable(GL_BLEND);
         glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-        glDrawArrays(GL_TRIANGLES, 0, d->ElementCount());
+        glDrawArrays(d->DrawMode(), 0, d->ElementCount());
         glDisable(GL_BLEND);
     } else {
-        glDrawArrays(GL_TRIANGLES, 0, d->ElementCount());
+        glDrawArrays(d->DrawMode(), 0, d->ElementCount());
     }
     
 

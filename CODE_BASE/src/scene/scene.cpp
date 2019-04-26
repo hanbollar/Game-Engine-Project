@@ -20,7 +20,7 @@ Scene::Scene(Scene& s)
         camera_(s.camera_),
         generic_scene_objects_(s.generic_scene_objects_),
         scene_characters_(s.scene_characters_),
-        audio_handler_(s.audio_handler_),
+        audio_handler_(std::move(s.audio_handler_)),
         text_handler_(s.text_handler_),
         timer_(s.timer_),
         on_selected_(s.on_selected_)
@@ -53,21 +53,25 @@ void Scene::RunLoadingScreen() {
     loadingTextures_[2] = ShaderProgram::LoadTextureFromFile("resources/Load/3.jpg");
     timer_->Play();
 
+    blank_quad_ = std::shared_ptr<Drawable>(new Drawable());
+    blank_quad_->CreateBlankQuad();
+
     // screen
     std::shared_ptr<ShaderProgram> simple_program = std::shared_ptr<SimpleProgram>(new SimpleProgram(
         "shader_files/simple.vertexshader",
         "shader_files/simple.fragmentshader"));
     screen_quad_ = unique_ptr<SceneObject>(new SceneObject(
-        "resources/quad.obj", Filetype::OBJ, simple_program, "screenquad", glm::vec3(0.f)));
+        blank_quad_, simple_program, "screenquad", glm::vec3(0.f)));
     screen_quad_->SetTexture(loadingTextures_[0]);
+    screen_quad_->SetDrawMode(GL_TRIANGLE_STRIP);
     screen_quad_->CreateSelf();
 
     screen_quad_->Draw(this->ViewProjection());
 }
 
 void Scene::SetupCatLocations() {
-    const glm::vec3 MIN_LOC(-800, 0, -800);
-    const glm::vec3 MAX_LOC(800, 0, 800);
+    const glm::vec3 MIN_LOC(-80, 0, -80);
+    const glm::vec3 MAX_LOC(80, 0, 80);
     cat_loc_[0] = LERP(MIN_LOC, MAX_LOC, rand() / RAND_MAX);
     cat_loc_[1] = LERP(MIN_LOC, MAX_LOC, rand() / RAND_MAX);
     cat_loc_[2] = LERP(MIN_LOC, MAX_LOC, rand() / RAND_MAX);
@@ -75,6 +79,7 @@ void Scene::SetupCatLocations() {
 
 void Scene::StartGame() {
     camera_->eye = glm::vec3(10, 10, 10);
+    SetupCatLocations();
 
     // filling in base screen info
     selected_[StartTextures::START_SELECTED] = ShaderProgram::LoadTextureFromFile("resources/Start/1.jpg");
@@ -91,14 +96,16 @@ void Scene::StartGame() {
         "shader_files/tex.vertexshader",
         "shader_files/tex.fragmentshader"));
 
-    blank_quad_ = std::shared_ptr<Drawable>(new Drawable());
-    blank_quad_->CreateBlankQuad();
+    
 
     // SceneObjects
-    user_character_ = shared_ptr<Character>(new Character(
-        "resources/quad.obj", Filetype::OBJ, general_tex_prog, "player", glm::vec3(0.f)));
-    user_character_->SetTexture(ShaderProgram::LoadTextureFromFile("resources/polka_dots.jpg"));
-    user_character_->CreateSelf();
+    std::shared_ptr<SceneObject> random_mesh = shared_ptr<SceneObject>(new SceneObject(
+        "resources/quad.obj", Filetype::OBJ, general_tex_prog, "random", glm::vec3(0.f)));
+    random_mesh->SetTexture(ShaderProgram::LoadTextureFromFile("resources/polka_dots.jpg"));
+    random_mesh->CreateSelf();
+    random_mesh->AddGlobalTransform(glm::translate(glm::mat4(1.f), cat_loc_[0]));
+    random_mesh->AddGlobalTransform(glm::translate(glm::mat4(1.f), cat_loc_[1]));
+    random_mesh->AddGlobalTransform(glm::translate(glm::mat4(1.f), cat_loc_[2]));
 
     std::shared_ptr<ShaderProgram> rain_prog_ = std::shared_ptr<DefaultProgram>(new DefaultProgram(
         "shader_files/threeD.vertexshader",
@@ -106,9 +113,10 @@ void Scene::StartGame() {
     rain_prog_->SetTimer(timer_);
     rain_prog_->SetResolution(vec2(800, 800));
 
-    shared_ptr<SceneObject> random_mesh = shared_ptr<SceneObject>(new SceneObject(
-        "resources/mainchar/walking_char_sequence.dae", Filetype::COLLADA, threeD_prog, "random", glm::vec3(1, 1, 0.f)));
-    random_mesh->CreateSelf();
+    user_character_ = shared_ptr<Character>(new Character(
+        "resources/mainchar/walking_char_sequence.dae", Filetype::COLLADA, threeD_prog, "player", glm::vec3(1, 1, 0.f)));
+    user_character_->SetGlobalTransform(glm::translate(glm::scale(glm::mat4(1.f), glm::vec3(0.1)), glm::vec3(0, 21, 0)));
+    user_character_->CreateSelf();
     
     shared_ptr<SceneObject> rain_floor = shared_ptr<SceneObject>(new SceneObject(
         blank_quad_, rain_prog_, "rain floor", glm::vec3(0.f)));
@@ -119,7 +127,8 @@ void Scene::StartGame() {
     rain_floor->CreateSelf();
 
     shared_ptr<SceneObject> tree = shared_ptr<SceneObject>(new SceneObject(
-        "resources/grass/grass_low_poly.dae", Filetype::COLLADA, threeD_prog, "tree", glm::vec3(0, 0, 2)));
+        "resources/lowpoly_tree/Lowpoly_tree_sample.dae", Filetype::COLLADA, threeD_prog, "tree", glm::vec3(0, 0, 2)));
+    tree->SetDrawMode(GL_TRIANGLE_STRIP);
     tree->CreateSelf();
     
     std::shared_ptr<ShaderProgram> grass_tex_prog = std::shared_ptr<DefaultProgram>(new DefaultProgram(
@@ -145,10 +154,10 @@ void Scene::StartGame() {
     scene_characters_.push_back(user_character_);
 	generic_scene_objects_.push_back(random_mesh);
     generic_scene_objects_.push_back(rain_floor);
-    RandomlyAddToScene(tree, 10, glm::vec3(1, 10, 1), glm::vec3(2, 15, 2), glm::ivec3(50, 1, 50), glm::vec3(10, 0, 10));
+    RandomlyAddTransformations(tree, 10, glm::vec3(.5, .5, .5), glm::vec3(1.5, 2, 1.5), glm::ivec3(50, 1, 50), glm::vec3(10, 1, 10));
     generic_scene_objects_.push_back(tree);
     // adding in scene objects that have opacity
-    RandomlyAddToScene(grass, 500, glm::vec3(0.2), glm::vec3(1.f), glm::ivec3(100, 1, 100), glm::vec3(0));
+    RandomlyAddTransformations(grass, 500, glm::vec3(0.2), glm::vec3(1.f), glm::ivec3(100, 1, 100), glm::vec3(0));
     generic_scene_objects_.push_back(grass);
 
     screen_quad_->SetTexture(StartTextures::START_SELECTED);
@@ -157,7 +166,7 @@ void Scene::StartGame() {
     text_handler_->initText2D(5, 5, 20, "general info", TextId::GENERALSCREEN);
 }
 
-void Scene::RandomlyAddToScene( std::shared_ptr<SceneObject> scene_obj, const unsigned int& num,
+void Scene::RandomlyAddTransformations( std::shared_ptr<SceneObject> scene_obj, const unsigned int& num,
                                 const glm::fvec3& min_scale, const glm::fvec3&max_scale,
                                 const glm::ivec3& rand_dim, const glm::vec3& center) {
     glm::vec3 z(0, 1, 0);
@@ -199,8 +208,10 @@ void Scene::ControllerEvents(const unsigned char *button_events, const float *ax
             if (on_selected_ == StartTextures::START_SELECTED) {
                 on_scene_ = SceneList::MAINGAME;
                 if (!game_started_) {
-                    audio_handler_->StartPlayingSound();
-                    audio_handler_->SetAudioSourcePos(glm::vec3(0.f));
+                    audio_handler_->StartPlayingSound(AudioChoices::CAT1, AudioChoices::GENERAL);
+                    audio_handler_->PauseSound();
+                    audio_handler_->Set3D(false);
+                    audio_handler_->UnpauseSound();
                     playing_ = true;
                     game_started_ = true;
                 }
@@ -305,30 +316,54 @@ void Scene::HandleCatLocationCheck() {
     if (glm::distance(user_character_->GetGlobalPosition(), cat_loc_[on_cat_]) < CAT_ALMOST_FOUND_MIN_DIST_) {
         if (cat_in_min_dist_) {
             // still valid
-            //audio_handler_->Update();
-            text_handler_->writeToText2D("YOU'RE ALMOST THERE! PRESS A WHEN YOU SEE THE CAT!", TextId::GENERALSCREEN);
         } else {
-            // no longer valid
+            // just started beind valid
+            cat_in_min_dist_ = true;
+            text_handler_->writeToText2D("YOU'RE ALMOST THERE! PRESS A WHEN YOU SEE THE CAT!", TextId::GENERALSCREEN);
         }
     } else {
-        // still not valid
+        // not valid
         cat_in_min_dist_ = false;
-        text_handler_->writeToText2D("MAIN GAME", TextId::GENERALSCREEN);
     }
-    
     
     if (glm::distance(user_character_->GetGlobalPosition(), cat_loc_[on_cat_]) < CAT_SOUND_MIN_DIST_) {
         if (cat_in_sound_dist_) {
             // still valid
-            text_handler_->writeToText2D("YOU'RE CLOSE! KEEP LOOKING!", TextId::GENERALSCREEN);
+            if (!cat_in_min_dist_) {
+                text_handler_->writeToText2D("YOU'RE CLOSE! KEEP LOOKING!", TextId::GENERALSCREEN);
+            }
         } else {
-            // no longer valid
-            text_handler_->writeToText2D("MAIN GAME", TextId::GENERALSCREEN);
+            // just started being valid
+            //audio_handler_->StopPlayingSound();
+
+            audio_handler_->PauseSound();
+            audio_handler_->Set3D(true);
+            audio_handler_->UnpauseSound();
+
+            /*audio_handler_->Set3D(true);
+            audio_handler_->SetAudioFile(AudioChoices(AudioChoices::CAT1 + on_cat_));
+            audio_handler_->SetAudioSourcePos(cat_loc_[on_cat_]);
+            audio_handler_->StartPlayingSound();*/
+            cat_in_sound_dist_ = true;
         }
     } else {
         // not valid
-        cat_in_sound_dist_ = false;
-        text_handler_->writeToText2D("MAIN GAME", TextId::GENERALSCREEN);
+        if (cat_in_sound_dist_) {
+            // just stopped being valid
+            text_handler_->writeToText2D("MAIN GAME", TextId::GENERALSCREEN);
+
+            audio_handler_->PauseSound();
+            audio_handler_->Set3D(false);
+            audio_handler_->UnpauseSound();
+
+            /*
+            audio_handler_->StopPlayingSound();
+            audio_handler_->Set3D(false);
+            audio_handler_->SetAudioFile(AudioChoices::GENERAL);
+            audio_handler_->StartPlayingSound();*/
+
+            cat_in_sound_dist_ = false;
+        }
     }
 }
 

@@ -1,5 +1,10 @@
 #include "scene_object.h"
 
+#include <glm/gtx/matrix_decompose.hpp>
+#include <glm/gtx/quaternion.hpp>
+#define GLM_ENABLE_EXPERIMENTAL
+
+
 SceneObject::SceneObject() {}
 
 SceneObject::SceneObject(
@@ -184,6 +189,12 @@ void SceneObject::SetTextures(GLuint tex_id1, GLuint tex_id2_opacity) {
     }
 }
 
+void SceneObject::SetDrawMode(const GLenum& e) {
+    for (std::shared_ptr<Drawable> d : this->drawable_components_) {
+        d->SetDrawMode(e);
+    }
+}
+
 void SceneObject::CreateSelf() {
     if (!program_) {
         return;
@@ -193,6 +204,7 @@ void SceneObject::CreateSelf() {
         program_ptr_->CreateDrawable(d, d->GetHandleLocation(HandleType::TEX)); //----------------------this is where issue is.
     }
 }
+
 void SceneObject::Draw(const glm::mat4 view_proj) {
     if (multiple_transforms_.size() == 0) {
         for (std::shared_ptr<Drawable> d : drawable_components_) {
@@ -215,6 +227,34 @@ void SceneObject::Draw(const glm::mat4 view_proj) {
             s->Draw(view_proj * m);
         }
     }
+}
+
+void SceneObject::MoveInDirection(std::shared_ptr<Camera>& camera, const glm::vec3& offset) {
+    glm::mat4 transformation = global_transform_;
+    glm::vec3 scale;
+    glm::quat rotation;
+    glm::vec3 translation;
+    glm::vec3 skew;
+    glm::vec4 perspective;
+    glm::decompose(transformation, scale, rotation, translation, skew, perspective);
+    rotation = glm::conjugate(rotation);
+    glm::mat4 rot = glm::toMat4(rotation);
+
+    global_transform_ = rot * glm::translate(glm::mat4(1.f), offset) * glm::inverse(rot) * global_transform_;
+
+    if (camera != nullptr) {
+        camera->ref = glm::vec3(global_transform_ * glm::vec4(0, 0, 0, 1));
+        camera->eye = glm::vec3(
+            rot * glm::translate(glm::mat4(1.f), offset) * glm::inverse(rot) * glm::vec4(camera->eye, 1)
+        );
+
+        camera->RecomputeAttributes();
+    }
+}
+
+void SceneObject::TurnInDirection(bool positive) {
+    const float TURN_DEG = float(M_PI / 12.f);
+    global_transform_ = glm::rotate(global_transform_, positive ? TURN_DEG : -TURN_DEG, glm::vec3(0, 1, 0));
 }
 
 

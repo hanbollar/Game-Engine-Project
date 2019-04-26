@@ -1,8 +1,9 @@
 #pragma once
 
-//#include "globals.h"
+#include "globals.h"
 #include "drawable.h"
 #include "shader_programs/shader_program.h"
+#include "camera.h"
 
 class SceneObject {
 private:
@@ -47,9 +48,14 @@ public:
     void SetTexture(GLuint tex_id);
     void SetTextures(GLuint tex_id1, GLuint tex_id2_opacity);
 
+    void SetDrawMode(const GLenum& e);
+
     GLuint Program() { return program_; }
     const GLuint Program() const { return program_; }
 
     void CreateSelf();
     void Draw(const glm::mat4 view_proj = glm::mat4(1.f));
+
+    virtual void MoveInDirection(std::shared_ptr<Camera>& camera, const glm::vec3& offset);
+    virtual void TurnInDirection(bool positive);
 };

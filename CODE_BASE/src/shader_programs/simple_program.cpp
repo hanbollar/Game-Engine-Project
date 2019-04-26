@@ -74,7 +74,7 @@ void SimpleProgram::Draw(shared_ptr<Drawable> d, const glm::mat4& global_transfo
     }
 
     /// DURING DRAW
-    glDrawArrays(GL_TRIANGLE_STRIP, 0, d->ElementCount());
+    glDrawArrays(d->DrawMode(), 0, d->ElementCount());
 
     /// AFTER DRAW
     glDisableVertexAttribArray(0);

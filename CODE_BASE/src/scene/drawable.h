@@ -57,8 +57,10 @@ public:
 
     const GLsizei ElementCount() const { return count_; }
     GLsizei ElementCount() { return count_; }
+    
     const GLsizei DrawMode() const { return draw_mode_; }
     GLsizei DrawMode() { return draw_mode_; }
+    void SetDrawMode(const GLenum& e) { draw_mode_ = e; }
 
     void ClearDrawable();
 
