@@ -5,13 +5,17 @@
 #include "shader_programs/shader_program.h"
 #include "camera.h"
 
+//#define BONE 
+
 class SceneObject {
 private:
     void AssimpLoadObj(const char* file_path);
     void AssimpLoadCollada(const char* file_path);
+#ifdef BONE
+    void AssimpLoadRiggedCollada(const char* file_path);
+#endif BONE
 
 protected:
-   
     std::string name_;
     glm::mat4 global_transform_;
 

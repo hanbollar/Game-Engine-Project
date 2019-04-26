@@ -63,8 +63,13 @@ private:
     std::shared_ptr<Character> cat_character_ = nullptr;
     std::shared_ptr<Character> fake_cat_character_ = nullptr;
 
-    std::shared_ptr<SceneObject> staff = nullptr; // kept here for testing // to be removed later when timebased is more optimized
-    shared_ptr<SceneObject> random_mesh = nullptr; // kept here for testing // TODO: remove when complete
+    // below items: to be removed later when timebased is more optimized
+    std::shared_ptr<SceneObject> staff = nullptr; // kept here for testing 
+    bool staff_equipped_ = false;
+    glm::mat4 staff_base_transf;
+
+    // below items: to be removed after testing complete
+    shared_ptr<SceneObject> random_mesh = nullptr;
 
 public:
 	Scene();

@@ -4,6 +4,8 @@
 
 #include <random>
 
+//#define MYDEBUG
+
 Scene::Scene()
 	:	WindowMaintainer(),
 		camera_(new Camera()),
@@ -132,9 +134,19 @@ void Scene::StartGame() {
     staff = shared_ptr<SceneObject>(new SceneObject(
         "resources/quad.obj", Filetype::OBJ, general_tex_prog, "random", glm::vec3(0.f)));
     staff->SetTexture(ShaderProgram::LoadTextureFromFile("resources/polka_dots.jpg"));
-    staff->SetGlobalTransform(glm::translate(glm::scale(glm::mat4(1.f), 6.f*glm::vec3(.2, 2, .2)), glm::vec3(0, -1, -4.5)));
+    staff_base_transf = glm::translate(glm::scale(glm::mat4(1.f), 6.f*glm::vec3(.2, 2, .2)), glm::vec3(0, -1, -4.5));
+    staff->SetGlobalTransform(staff_base_transf);
     staff->CreateSelf();
     staff->SetDrawMode(GL_TRIANGLE_STRIP);
+
+#ifdef MYDEBUG
+    std::shared_ptr<SceneObject> bone_vis = shared_ptr<SceneObject>(new SceneObject(
+        "resources/quad.obj", Filetype::OBJ, general_tex_prog, "random", glm::vec3(0.f)));
+    bone_vis->SetTexture(ShaderProgram::LoadTextureFromFile("resources/polka_dots.jpg"));
+    bone_vis->SetGlobalTransform(glm::translate(glm::scale(glm::mat4(1.f), 6.f*glm::vec3(.2, 1, .2)), glm::vec3(0)));
+    bone_vis->CreateSelf();
+    bone_vis->SetDrawMode(GL_TRIANGLE_STRIP);
+#endif MYDEBUG
 
     std::shared_ptr<ShaderProgram> rain_prog_ = std::shared_ptr<DefaultProgram>(new DefaultProgram(
         "shader_files/threeD.vertexshader",
@@ -149,7 +161,7 @@ void Scene::StartGame() {
     
     shared_ptr<SceneObject> rain_floor = shared_ptr<SceneObject>(new SceneObject(
         blank_quad_, rain_prog_, "rain floor", glm::vec3(0.f)));
-    float magnitude = 100.f;
+    float magnitude = 300.f;
     rain_floor->SetGlobalTransform(
         glm::rotate(glm::scale(glm::mat4(1.f), glm::vec3(magnitude)), float(M_PI/2.f), glm::vec3(1, 0, 0)));
     rain_floor->CreateSelf();
@@ -180,6 +192,16 @@ void Scene::StartGame() {
 
     user_character_->attached_components_.push_back(staff);
 
+#ifdef MYDEBUG
+    glm::mat4 transf = glm::translate(glm::mat4(1.f), glm::vec3(0, 1, 0));
+    Bone* b1 = new Bone(glm::mat4(15.f), nullptr); 
+    Bone* b2 = new Bone(transf, b1); 
+    Bone* b3 = new Bone(transf, b2);
+    Bone* b4 = new Bone(transf, b3);
+    std::vector<Bone*> bones = { b1, b2, b3, b4 };
+    user_character_->SetBones(bones);
+    user_character_->SetBoneObjectVisual(bone_vis);
+#endif MYDEBUG
 
     /******** SETTING UP FOR COLLISION CHECKS ******/
 
@@ -349,6 +371,18 @@ void Scene::ControllerEvents(const unsigned char *button_events, const float *ax
             audio_handler_->PlaySingleSound(AudioChoices::BELL);
         }
 
+        if (button_events[JoystickButtons::X] == GLFW_PRESS) {
+            if ((t*10) % 5 != 0) {
+                //std::cout << "time: " << t << std::endl;
+                // delay for button pressing
+                return;
+            }
+            staff_equipped_ = !staff_equipped_;
+            if (!staff_equipped_) {
+                staff->SetGlobalTransform(staff_base_transf);
+            }
+        }
+
         if (button_events[JoystickButtons::RIGHT_TAB] == GLFW_PRESS) {
             camera_->TranslateAlongLook(0.5f);
         }
@@ -373,14 +407,15 @@ void Scene::ControllerEvents(const unsigned char *button_events, const float *ax
             if (collision_handler_->TestLoc(user_character_->MoveInDirection(camera_, glm::vec3(0, 0, -1)))) {
                 // do nothing
             } else {
-                //user_character_->MoveInDirection(camera_, glm::vec3(0, 0, 1)); // COLLISION CHECKS DONT WORK ATM
+                // move back
+                //user_character_->MoveInDirection(camera_, glm::vec3(0, 0, 1)); // COLLISION CHECKS DONT WORK ATM - overcorrective char doesnt move
             }
         } else if (axes_events[JoystickAxes::MOVE_Y] == -1) {
             if (collision_handler_->TestLoc(user_character_->MoveInDirection(camera_, glm::vec3(0, 0, 1)))) {
                 // do nothing
             } else {
                 // move back
-                //user_character_->MoveInDirection(camera_, glm::vec3(0, 0, -1)); // COLLISION CHECKS DONT WORK ATM
+                //user_character_->MoveInDirection(camera_, glm::vec3(0, 0, -1)); // COLLISION CHECKS DONT WORK ATM - overcorrective char doesnt move
             }
         }
 
@@ -414,7 +449,6 @@ void Scene::CloseWindow() {
 }
 
 void Scene::HandleCatLocationCheck() {
-
     float dist = glm::distance(user_character_->GetGlobalPosition(), cat_loc_[on_cat_]);
 
     if (dist > CAT_TOO_FAR_DIST_) {
@@ -458,17 +492,21 @@ void Scene::HandleCatLocationCheck() {
 }
 
 void Scene::HandleTimeBasedMovement() {
-    // Staff Update
-    // right now hard-coded but for future can do this through a function pointer for every
-    // scene object attached to a specific scene object (and iterate recursively that way)
-    glm::mat4 base_transf = glm::translate(glm::scale(glm::mat4(1.f), 6.f*glm::vec3(.2, 2, .2)), glm::vec3(0, -1, -4.5)); 
-    glm::mat4 rotate_to_side_transf = glm::rotate(glm::mat4(1.f), float(M_PI / 2), glm::vec3(0, 1, 0));
+    if (staff_equipped_) {
+        // Staff Update
+        // right now hard-coded but for future can do this through a function pointer for every
+        // scene object attached to a specific scene object (and iterate recursively that way)
         
-    float y_loc = std::fabs(glm::cos(timer_->GetTime() * M_PI / 16));
-    glm::mat4 time_transf = glm::translate(rotate_to_side_transf * base_transf, glm::vec3(0, .75*y_loc, 0));
-    staff->SetGlobalTransform(time_transf);
+        glm::mat4 rotate_to_side_transf = glm::rotate(glm::mat4(1.f), float(M_PI / 2), glm::vec3(0, 1, 0));
+        float y_loc = std::fabs(glm::cos(timer_->GetTime() * M_PI / 16));
+        glm::mat4 time_transf = glm::translate(rotate_to_side_transf * staff_base_transf, glm::vec3(0, .75*y_loc, 0));
+        staff->SetGlobalTransform(time_transf);
 
-    // IK Update based on staff
+        // IK Update based on staff
+#ifdef MYDEBUG
+        user_character_->HoldStaff(glm::vec3(time_transf * glm::vec4(0, 0, 0, 1)));
+#endif MYDEBUG
+    }
 }
 
 void Scene::Update() {
@@ -498,6 +536,11 @@ void Scene::Update() {
         for (auto& c : scene_characters_) {
             c->Draw(vproj);
         }
+
+        // Leaving in for testing for now;
+#ifdef MYDEBUG
+        user_character_->DrawBones(vproj);
+#endif MYDEBUG
 
         if (cat_in_min_dist_) {
             /*if (on_cat_ == 3) {

@@ -97,6 +97,7 @@ void SceneObject::AssimpLoadObj(const char* file_path) {
         drawable_components_.push_back(std::shared_ptr<Drawable>(new Drawable(&vertices, &indices, GL_TRIANGLES)));
     }
 
+    // this also caused issues - commenting out for now
     /*std::vector<GLuint> m_Textures_ = NULL;
     for (unsigned int i = 0; i < scene->mNumMaterials; i++) {
         const aiMaterial* pMaterial = scene->mMaterials[i];
@@ -117,6 +118,99 @@ void SceneObject::AssimpLoadObj(const char* file_path) {
 void SceneObject::AssimpLoadCollada(const char* file_path) {
     AssimpLoadObj(file_path);
 }
+
+#ifdef BONE
+void SceneObject::AssimpLoadRiggedCollada(const char* file_path) {
+    // TODO - MODIFY ME TO ACTUALLY HANDLE THE RIGGING
+
+
+    Assimp::Importer importer;
+
+    const aiScene* scene = importer.ReadFile(file_path,
+        aiProcess_GenSmoothNormals |
+        aiProcess_GenUVCoords |
+        aiProcess_CalcTangentSpace |
+        aiProcess_Triangulate |
+        //aiProcess_JoinIdenticalVertices |
+        aiProcess_SortByPType);
+    if ((!scene) || (scene->mFlags == AI_SCENE_FLAGS_INCOMPLETE) || (!scene->mRootNode)) {
+        ErrorHandler::ThrowError("AssimpLoadObj error loading file: " + std::string(importer.GetErrorString()));
+    }
+
+    for (unsigned int i = 0; i < scene->mNumMeshes; ++i) {
+        const aiMesh* assimpMesh = scene->mMeshes[i];
+
+        std::vector<Vertex> vertices = std::vector<Vertex>();
+        std::vector<int> indices = std::vector<int>();
+
+        for (unsigned int j = 0; j < assimpMesh->mNumVertices; ++j) {
+            vertices.push_back(Vertex(
+                glm::vec3(assimpMesh->mVertices[j].x, assimpMesh->mVertices[j].y, assimpMesh->mVertices[j].z),
+                glm::vec3(assimpMesh->mNormals[j].x, assimpMesh->mNormals[j].y, assimpMesh->mNormals[j].z),
+                glm::vec2(assimpMesh->mTextureCoords[0][j].x, assimpMesh->mTextureCoords[0][j].y)
+            ));
+        }
+
+        
+        for (uint i = 0; i < assimpMesh->mNumBones; ++i) {
+            uint BoneIndex = 0;
+            string BoneName(assimpMesh->mBones[i]->mName.data);
+
+            if (m_BoneMapping.find(BoneName) == m_BoneMapping.end()) {
+                BoneIndex = m_NumBones;
+                m_NumBones++;
+                BoneInfo bi;
+                m_BoneInfo.push_back(bi);
+            }
+            else {
+                BoneIndex = m_BoneMapping[BoneName];
+            }
+
+            m_BoneMapping[BoneName] = BoneIndex;
+            m_BoneInfo[BoneIndex].BoneOffset = pMesh->mBones[i]->mOffsetMatrix;
+
+            for (uint j = 0; j < pMesh->mBones[i]->mNumWeights; j++) {
+                uint VertexID = m_Entries[MeshIndex].BaseVertex + pMesh->mBones[i]->mWeights[j].mVertexId;
+                float Weight = pMesh->mBones[i]->mWeights[j].mWeight;
+                Bones[VertexID].AddBoneData(BoneIndex, Weight);
+            }
+        }
+
+        for (unsigned int j = 0; j < assimpMesh->mNumFaces; ++j) {
+            // ibo was causing loading errors due to some improperly formatted obj and dae 
+            // files I'm using as assets.
+            // commenting out for now.
+            /*auto faceI = assimpMesh->mFaces[i];
+            if (faceI.mNumIndices < 3) {
+                continue;
+            }
+            assert(faceI.mNumIndices == 3);
+
+            indices.push_back(assimpMesh->mFaces[i].mIndices[0]);
+            indices.push_back(assimpMesh->mFaces[i].mIndices[1]);
+            indices.push_back(assimpMesh->mFaces[i].mIndices[2]);*/
+        }
+
+        drawable_components_.push_back(std::shared_ptr<Drawable>(new Drawable(&vertices, &indices, GL_TRIANGLES)));
+    }
+
+    /*std::vector<GLuint> m_Textures_ = NULL;
+    for (unsigned int i = 0; i < scene->mNumMaterials; i++) {
+        const aiMaterial* pMaterial = scene->mMaterials[i];
+
+
+        if (pMaterial->GetTextureCount(aiTextureType_DIFFUSE) > 0) {
+            aiString path;
+
+            if (pMaterial->GetTexture(aiTextureType_DIFFUSE, 0, &path, NULL, NULL, NULL, NULL, NULL) == AI_SUCCESS) {
+                GLuint tex_id = -1;
+                ShaderProgram::LoadTextureFromFile(path.C_Str(), tex_id, true);
+                m_Textures[i].push_back(tex_id);
+            }
+        }
+    }*/
+}
+#endif BONE
 
 void SceneObject::Load(const char* file_path, Filetype mesh_file_type) {
     drawable_components_.clear();

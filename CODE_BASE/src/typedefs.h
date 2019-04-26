@@ -50,6 +50,7 @@ typedef enum {
     OBJ,
     JSON,
     COLLADA,
+    RIGGED,
 
     NUMFILETYPES
 } Filetype;
