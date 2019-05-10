@@ -50,12 +50,23 @@ ________________________________________________________________________________
 
 Online Resources:
 - ![learnopengl.com](learnopengl.com)
+   - used for initial project setup and some tutorials for possible frameworks to use
 - ![assimp](http://www.assimp.org/)
+   - general object and aspect loading
 - ![SOIL](https://www.lonesock.net/soil.html)
+   - tried using this originally for texture loading, had linking issues, then realized it doesnt work with the newer version of glfw (it cant find context)
 - ![stbimage](https://github.com/nothings/stb)
+   - another texture loading software I tried - worked for general aspects but not for every inputted
 - ![collada](https://www.khronos.org/collada/)
-- ![opengl](http://www.opengl-tutorial.org/)
+   - main file setup while i was trying to figure out why the texture part wasn't working. also switched to this to aid project setup while trying to work on rigging.
+- ![opengl-tutorial](http://www.opengl-tutorial.org/)
+   - extremely helpful for texture and audio loading (especially in terms of possible libraries and how to get text overlay to work properly)
+- ![opengl 4.2](https://www.khronos.org/registry/OpenGL/specs/gl/glspec42.core.pdf)
+   - opengl version for this project
+- ![glfw](https://github.com/glfw/glfw)
+   - the window support library that works on mac and windows
 - ![irrklang](https://www.ambiera.com/irrklang/downloads.html)
+   - used for audio - also followed their tutorial for how to get pausing and playing to work to allow for switching between the 2d and 3d audio without the audio still playing (because that became a major issue)
 
 Books:
 - Game Engine Architecture, Jason Gregory, 3ed
