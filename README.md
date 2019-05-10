@@ -16,7 +16,7 @@ ________________________________________________________________________________
 
 This is a small version of a game engine with a short cat game built using it.
 
-- ![Final Project VIDEO](./SeniorDesignGameEngine_smallfile.mp4)
+- ![FINAL PROJECT VIDEO](./SeniorDesignGameEngine_smallfile.mp4)
 
 ____________________________________________________________________________________
 
@@ -64,7 +64,7 @@ Online Resources:
 - ![opengl 4.2](https://www.khronos.org/registry/OpenGL/specs/gl/glspec42.core.pdf)
    - opengl version for this project
 - ![glfw](https://github.com/glfw/glfw)
-   - the window support library that works on mac and windows
+   - the window support library that works on mac and windows, used this site mostly for debugging controller support and interaction. originally had it in the window class itself but ended up refactoring to actually be part of the windowmaintainter (scene) in this case.
 - ![irrklang](https://www.ambiera.com/irrklang/downloads.html)
    - used for audio - also followed their tutorial for how to get pausing and playing to work to allow for switching between the 2d and 3d audio without the audio still playing (because that became a major issue)
 
