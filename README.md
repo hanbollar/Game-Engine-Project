@@ -16,7 +16,7 @@ ________________________________________________________________________________
 
 This is a small version of a game engine with a short cat game built using it.
 
-- ![FINAL PROJECT VIDEO](./SeniorDesignGameEngine_smallfile.mp4)
+- ![FINAL PROJECT VIDEO](./Senior\ Design\ Game\ Engine.mp4)
 
 ____________________________________________________________________________________
 
