@@ -354,6 +354,10 @@ void Scene::ControllerEvents(const unsigned char *button_events, const float *ax
                     on_cat_++;
                     cat_in_min_dist_ = false;
                     cat_in_sound_dist_ = false;
+                    //audio_handler_->SwitchToStored2DSound();
+                    /*audio_handler_->StartPlayingSound(
+                        AudioChoices(AudioChoices::CAT1 + on_cat_),
+                        AudioChoices::GENERAL);*/
                     audio_handler_->SetAudioSourcePos(cat_loc_[on_cat_]);
                     audio_handler_->SwitchToStored2DSound();
                 }
